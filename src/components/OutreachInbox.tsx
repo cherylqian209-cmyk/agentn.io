@@ -11,7 +11,7 @@ const gmailScopes = [
 
 export default function OutreachInbox() {
   const { state, connectGmail, useDemoInbox, sendDraft, queueFollowUp } = useMvp()
-  const outreach = state.outreach
+  const outreach = state.outreach ?? { gmailConnected: false, mode: 'live', threads: [] }
 
   const metrics = useMemo(() => {
     const sent = outreach.threads.filter((t: any) => t.status === 'sent' || t.status === 'replied').length

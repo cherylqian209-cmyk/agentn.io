@@ -7,7 +7,7 @@ export type OutputFormat = 'Table' | 'Summary' | 'CSV' | 'JSON' | 'Email Drafts'
 export type Recurrence = 'one-time' | 'daily' | 'weekly' | 'monthly'
 
 type Agent = { id: string; name: string; description: string; category: string; pricePerRun: number; rating: number; status: 'verified'|'popular'|'new'|'beta'; tags: string[]; runs: number }
-type Task = { id: string; title: string; desiredOutcome: string; type: TaskType; priority: 'low'|'normal'|'high'|'critical'; budgetLimit:number; runtimeLimit:number; outputFormat: OutputFormat; recurrence: Recurrence; status: 'queued'|'routing'|'running'|'validating'|'completed'|'failed'|'disputed'; progress:number; agents: Agent[]; estimatedCost:number; actualCost?:number; estimatedRuntime:string; startedAt?:string; completedAt?:string; proofHash?:string; logs:string[]; artifact?: Record<string, unknown>[] }
+type Task = { id: string; title: string; desiredOutcome: string; type: TaskType; priority: 'low'|'normal'|'high'|'critical'; budgetLimit:number; runtimeLimit:number; outputFormat: OutputFormat; recurrence: Recurrence; status: 'queued'|'routing'|'running'|'validating'|'completed'|'failed'|'disputed'; progress:number; agents: Agent[]; estimatedCost:number; actualCost?:number; estimatedRuntime:string; startedAt?:string; completedAt?:string; proofHash?:string; logs:string[]; artifact?: any; leadICP?: any }
 type ActivityEvent = { id:string; type:string; title:string; description:string; timestamp:string; agentName?:string; taskId?:string; status:'success'|'running'|'warning'|'error'|'info'; taskType?: string }
 type Contract = { id:string; client:string; agentName:string; taskTitle:string; recurrence:'daily'|'weekly'|'monthly'; monthlyValue:number; sla:number; nextRunDate:string; status:'active'|'expiring'|'at-risk'|'terminated'; createdFromTaskId?:string }
 type Proof = { id:string; taskId:string; agentName:string; type:TaskType; duration:string; cost:number; status:'verified'|'pending'|'failed'|'disputed'; hash:string; logs:string[]; artifact?: Record<string, unknown>[] }
@@ -33,26 +33,33 @@ export function MvpProvider({ children }: { children: React.ReactNode }) {
     selectAgent: (id:string) => setState((s:any)=>({ ...s, selectedAgentId:id })),
     addAgent: (agent: Agent) => setState((s:any)=>({ ...s, agents:[agent, ...s.agents], activityEvents:[{ id: crypto.randomUUID(), type:'AGENT_SPAWNED', title:'Agent spawned', description:`${agent.name} is now available.`, timestamp:new Date().toISOString(), status:'success', agentName:agent.name }, ...s.activityEvents], toast:'Agent spawned' })),
     addEvent: (event: Partial<ActivityEvent>) => setState((s:any)=>({ ...s, activityEvents:[{ id: crypto.randomUUID(), timestamp:new Date().toISOString(), status:'info', title:'Event', description:'', ...event }, ...s.activityEvents] })),
-    runTask: (draft:any, agents:Agent[]) => {
+    runTask: async (draft:any, agents:Agent[]) => {
       const id = `TK-${Date.now().toString().slice(-6)}`
-      const task: Task = { id, title:draft.title, desiredOutcome:draft.desiredOutcome, type:draft.type, priority:draft.priority, budgetLimit:draft.budgetLimit, runtimeLimit:draft.runtimeLimit, outputFormat:draft.outputFormat, recurrence:draft.recurrence, status:'queued', progress:0, agents, estimatedCost: Number((agents.reduce((a,b)=>a+b.pricePerRun,0)*1.6).toFixed(2)), estimatedRuntime:`${Math.max(3,agents.length*2)}m`, startedAt:new Date().toISOString(), logs:['Task queued for orchestration.'] }
+      const task: Task = { id, title:draft.title, desiredOutcome:draft.desiredOutcome, type:draft.type, priority:draft.priority, budgetLimit:draft.budgetLimit, runtimeLimit:draft.runtimeLimit, outputFormat:draft.outputFormat, recurrence:draft.recurrence, status:'queued', progress:0, agents, estimatedCost: Number((agents.reduce((a,b)=>a+b.pricePerRun,0)*1.6).toFixed(2)), estimatedRuntime:`${Math.max(3,agents.length*2)}m`, startedAt:new Date().toISOString(), logs:['Task queued for orchestration.'], leadICP: draft.leadICP }
       setState((s:any)=>({ ...s, tasks:[task, ...s.tasks], activeTaskId:id, activityEvents:[{ id: crypto.randomUUID(), type:'TASK_POSTED', title:'Task posted', description:task.title, timestamp:new Date().toISOString(), status:'info', taskId:id, taskType:task.type }, ...s.activityEvents], toast:'Task started' }))
+      let leadResult:any = null
+      if (draft.type === 'Lead Generation') {
+        const res = await fetch('/api/leadgen/run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ icp: draft.leadICP }) })
+        leadResult = await res.json()
+      }
       const milestones = [
-        { p:15, status:'routing', log:`${agents[0]?.name ?? 'Orchestrator'} assigned.`, type:'TASK_RUNNING' },
-        { p:35, status:'running', log:'Agents spawned.', type:'AGENT_SPAWNED' },
-        { p:55, status:'running', log:'Collecting source data.', type:'TASK_RUNNING' },
-        { p:75, status:'running', log:'Generating artifact.', type:'TASK_RUNNING' },
-        { p:90, status:'validating', log:'Validation checks passed.', type:'VALIDATION_STARTED' },
-        { p:100, status:'completed', log:'Artifact ready.', type:'TASK_COMPLETED' },
+        { p:10, status:'routing', log:'ICP compiled.', type:'ICP_BUILT' },
+        { p:25, status:'running', log:'Sources discovered.', type:'SOURCES_DISCOVERED' },
+        { p:40, status:'running', log:'Web fetch started.', type:'WEB_FETCH_STARTED' },
+        { p:55, status:'running', log:'Web fetch completed.', type:'WEB_FETCH_COMPLETED' },
+        { p:70, status:'running', log:'Candidates extracted.', type:'CANDIDATES_EXTRACTED' },
+        { p:82, status:'running', log:'Leads scored.', type:'LEADS_SCORED' },
+        { p:92, status:'validating', log:'Outreach generated and validated.', type:'OUTREACH_GENERATED' },
+        { p:100, status:'completed', log:'Proof created.', type:'PROOF_CREATED' },
       ] as const
       milestones.forEach((m, i) => setTimeout(() => setState((s:any) => {
-        const tasks = s.tasks.map((t:Task) => t.id !== id ? t : { ...t, progress:m.p, status:m.status as any, logs:[...t.logs, m.log], completedAt: m.p===100?new Date().toISOString():t.completedAt, proofHash: m.p===100?`0x${Math.random().toString(16).slice(2,18)}`:t.proofHash, actualCost: m.p===100?task.estimatedCost + 0.03:t.actualCost, artifact: m.p===100?[{ Company:'Yacht Labs', 'Contact name':'A. Rivera', Role:'Head of Growth', Email:'a@yachtlabs.com', 'Fit score':92, Reason:'ICP match', 'Suggested opener':'Noticed your recent launch...' }]:t.artifact }
+        const tasks = s.tasks.map((t:Task) => t.id !== id ? t : { ...t, progress:m.p, status:m.status as any, logs:[...t.logs, m.log], completedAt: m.p===100?new Date().toISOString():t.completedAt, proofHash: m.p===100?(leadResult?.proof?.proofHash ?? `0x${Math.random().toString(16).slice(2,18)}`):t.proofHash, actualCost: m.p===100?task.estimatedCost + 0.03:t.actualCost, artifact: m.p===100?(leadResult?.artifact ?? t.artifact):t.artifact }
         )
         const completed = tasks.find((t:Task)=>t.id===id)
         const ev = { id: crypto.randomUUID(), type:m.type, title:m.type.replace('_',' '), description:m.log, timestamp:new Date().toISOString(), status:m.p===100?'success':'running', taskId:id, taskType:draft.type }
         const next:any = { ...s, tasks, activityEvents:[ev, ...s.activityEvents] }
         if (m.p===100 && completed) {
-          next.proofRecords = [{ id:`POW-${id}`, taskId:id, agentName:agents.map(a=>a.name).join(', '), type:draft.type, duration:'5m 12s', cost:completed.actualCost, status:'verified', hash:completed.proofHash, logs:completed.logs, artifact:completed.artifact }, ...s.proofRecords]
+          next.proofRecords = [{ id:`POW-${id}`, taskId:id, agentName:agents.map(a=>a.name).join(', '), type:draft.type, duration:'5m 12s', cost:completed.actualCost, status:'verified', hash:completed.proofHash, logs:completed.logs, artifact:completed.artifact, proofMeta: leadResult?.proof }, ...s.proofRecords]
           if (draft.recurrence !== 'one-time') next.contracts = [{ id:`C-${Date.now().toString().slice(-4)}`, client:'Internal Ops', agentName:agents.map(a=>a.name).join(', '), taskTitle:draft.title, recurrence:draft.recurrence, monthlyValue:Math.round((completed.actualCost??0)*30), sla:98, nextRunDate:new Date(Date.now()+86400000).toISOString(), status:'active', createdFromTaskId:id }, ...s.contracts]
         }
         return next

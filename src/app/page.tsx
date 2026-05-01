@@ -13,6 +13,74 @@ export default function RootPage() {
       const doc = iframe.contentDocument
       if (!doc) return
 
+      if (!doc.getElementById('agentn-social-proof')) {
+        const section = doc.createElement('section')
+        section.id = 'agentn-social-proof'
+        section.innerHTML = `
+          <div class="agentn-social-inner">
+            <p class="agentn-social-kicker">TRUSTED BY GROWTH TEAMS AT</p>
+            <div class="agentn-social-logos">
+              <span>STRIPE</span>
+              <span>NOTION</span>
+              <span>RAMP</span>
+              <span>WEBFLOW</span>
+              <span>HUBSPOT</span>
+              <span>MERCURY</span>
+            </div>
+          </div>
+        `
+
+        const style = doc.createElement('style')
+        style.textContent = `
+          #agentn-social-proof {
+            margin: 24px auto 0;
+            width: min(1320px, calc(100% - 120px));
+            border-top: 1px solid rgba(78, 240, 138, 0.16);
+            border-bottom: 1px solid rgba(78, 240, 138, 0.16);
+            background: linear-gradient(90deg, rgba(11, 17, 15, 0.92), rgba(8, 13, 12, 0.92));
+          }
+          .agentn-social-inner { padding: 20px 24px; }
+          .agentn-social-kicker {
+            margin: 0 0 14px;
+            font-family: "JetBrains Mono", ui-monospace, monospace;
+            letter-spacing: 0.2em;
+            font-size: 11px;
+            color: rgba(122, 138, 130, 0.9);
+          }
+          .agentn-social-logos {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+          }
+          .agentn-social-logos span {
+            border: 1px solid rgba(78, 240, 138, 0.2);
+            padding: 12px 8px;
+            text-align: center;
+            color: rgba(216, 230, 223, 0.92);
+            font-family: "JetBrains Mono", ui-monospace, monospace;
+            letter-spacing: 0.14em;
+            font-size: 14px;
+          }
+          @media (max-width: 1100px) {
+            .agentn-social-logos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+          }
+          @media (max-width: 760px) {
+            #agentn-social-proof { width: calc(100% - 36px); }
+            .agentn-social-logos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          }
+        `
+
+        doc.head?.appendChild(style)
+
+        const main = doc.querySelector('main')
+        const rootFallback = doc.getElementById('root')
+        if (main?.parentElement) {
+          main.parentElement.insertBefore(section, main.nextSibling)
+        } else {
+          rootFallback?.appendChild(section)
+        }
+      }
+
       const handler = (event: MouseEvent) => {
         const target = event.target as HTMLElement | null
         const clickable = target?.closest('button, a, [role="button"], [onclick]') as HTMLElement | null

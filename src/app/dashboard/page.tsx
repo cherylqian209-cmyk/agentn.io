@@ -7,6 +7,7 @@ import Sidebar from '@/components/Sidebar'
 import RightPanel from '@/components/RightPanel'
 import ActivityFeed from '@/components/ActivityFeed'
 import Marketplace from '@/components/Marketplace'
+import DataLab from '@/components/DataLab'
 import ProofOfWorkTable from '@/components/ProofOfWorkTable'
 import SwarmCommand from '@/components/SwarmCommand'
 import NetworkGraph from '@/components/NetworkGraph'
@@ -16,7 +17,7 @@ import Compute from '@/components/Compute'
 import SpawnAgentModal from '@/components/SpawnAgentModal'
 import PostTaskModal from '@/components/PostTaskModal'
 
-type Page = 'activity' | 'marketplace' | 'proof' | 'swarm' | 'network' | 'contracts' | 'insights' | 'compute'
+type Page = 'activity' | 'marketplace' | 'data' | 'proof' | 'swarm' | 'network' | 'contracts' | 'insights' | 'compute'
 
 const WIDE_PAGES: Page[] = ['network', 'insights', 'compute']
 
@@ -42,6 +43,7 @@ export default function DashboardPage() {
         <div className={`content${isWide ? ' wide' : ''}`}>
           {activePage === 'activity' && <ActivityFeed />}
           {activePage === 'marketplace' && <Marketplace />}
+          {activePage === 'data' && <DataLab />}
           {activePage === 'proof' && <ProofOfWorkTable />}
           {activePage === 'swarm' && <SwarmCommand onSpawnAgent={() => setSpawnOpen(true)} />}
           {activePage === 'network' && <NetworkGraph />}

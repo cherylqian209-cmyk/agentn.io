@@ -1,197 +1,39 @@
 'use client'
+import { useMemo, useState } from 'react'
+import { useMvp } from '@/lib/mvpStore'
 
-import { useState } from 'react'
-
-interface TaskRunResult {
-  taskId: string
-  taskRunId: string
-  artifact: { content: string; type: string }
-  proofLog: { model: string; durationMs: number; estimatedCost: number; status: string; inputHash: string; outputHash: string }
-}
-
-interface Props {
-  open: boolean
-  onClose: () => void
-  onCompleted: (result: TaskRunResult) => void
-}
-
-type Step = 'form' | 'running' | 'done' | 'error'
-
-export default function PostTaskModal({ open, onClose, onCompleted }: Props) {
-  const [goal, setGoal] = useState('')
-  const [targetCustomer, setTargetCustomer] = useState('')
-  const [desiredOutput, setDesiredOutput] = useState('')
-  const [budget, setBudget] = useState('1.00')
-  const [step, setStep] = useState<Step>('form')
-  const [result, setResult] = useState<TaskRunResult | null>(null)
-  const [errorMsg, setErrorMsg] = useState('')
-  const [statusText, setStatusText] = useState('')
-
-  async function handleRun() {
-    if (!goal.trim()) {
-      setErrorMsg('Goal is required.')
-      return
+export default function PostTaskModal({ open, onClose }: { open: boolean; onClose: () => void; onCompleted?: (result: unknown) => void }) {
+  const { state, runTask, addEvent } = useMvp()
+  const [step, setStep] = useState<'form'|'plan'>('form')
+  const [f, setF] = useState({ title:'', desiredOutcome:'', type:'Lead Generation', priority:'normal', budgetLimit:100, runtimeLimit:30, outputFormat:'Table', recurrence:'one-time' })
+  const agents = useMemo(() => {
+    const map: Record<string, string[]> = {
+      'Lead Generation':['Lead-Extractor-V8','Market-Intel-Bot','Copywriter-GPT-4X','Cold-Outreach-Pro'],
+      'Market Research':['Market-Intel-Bot','Scraper-Cluster-X','Summary-Agent'],
+      'Copywriting':['Copywriter-GPT-4X','Performance-Scorer','Variant-Generator'],
     }
-    setErrorMsg('')
-    setStep('running')
-    setStatusText('Creating task record...')
-
-    try {
-      // 1. Create task
-      const taskRes = await fetch('/api/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ goal, targetCustomer, desiredOutput, budget: parseFloat(budget) || 1 }),
-      })
-      if (!taskRes.ok) throw new Error((await taskRes.json()).error ?? 'Failed to create task')
-      const { taskId } = await taskRes.json()
-
-      setStatusText('Running AI agent...')
-
-      // 2. Execute task run
-      const runRes = await fetch('/api/task-run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ taskId, goal, targetCustomer, desiredOutput }),
-      })
-      if (!runRes.ok) throw new Error((await runRes.json()).error ?? 'Task run failed')
-      const runData: TaskRunResult = await runRes.json()
-
-      setResult(runData)
-      setStep('done')
-      onCompleted(runData)
-    } catch (e: unknown) {
-      setErrorMsg(e instanceof Error ? e.message : 'Unknown error')
-      setStep('error')
-    }
-  }
-
-  function handleClose() {
-    setStep('form')
-    setResult(null)
-    setErrorMsg('')
-    setGoal('')
-    setTargetCustomer('')
-    setDesiredOutput('')
-    setBudget('1.00')
-    onClose()
-  }
-
+    return (map[f.type] || ['Lead-Extractor-V8']).map(n => state.agents.find((a:any)=>a.name===n) || { id:n, name:n, pricePerRun:0.1 })
+  }, [f.type, state.agents])
   if (!open) return null
-
-  return (
-    <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) handleClose() }}>
-      <div className="modal" style={{ width: '480px' }}>
-        {step === 'form' && (
-          <>
-            <h3>▷ POST TASK</h3>
-
-            <label>GROWTH GOAL *</label>
-            <textarea
-              placeholder="e.g. Generate 20 cold email subject lines for a B2B SaaS targeting CTOs"
-              value={goal}
-              onChange={e => setGoal(e.target.value)}
-              style={{ minHeight: '70px' }}
-            />
-
-            <label>TARGET CUSTOMER</label>
-            <input
-              type="text"
-              placeholder="e.g. Series B SaaS founders, 50–200 employees"
-              value={targetCustomer}
-              onChange={e => setTargetCustomer(e.target.value)}
-            />
-
-            <label>DESIRED OUTPUT</label>
-            <input
-              type="text"
-              placeholder="e.g. List of subject lines with open-rate scores"
-              value={desiredOutput}
-              onChange={e => setDesiredOutput(e.target.value)}
-            />
-
-            <label>BUDGET (USD)</label>
-            <input
-              type="number"
-              placeholder="1.00"
-              min="0"
-              step="0.01"
-              value={budget}
-              onChange={e => setBudget(e.target.value)}
-            />
-
-            {errorMsg && (
-              <div style={{ fontFamily: 'var(--mono)', fontSize: '10px', color: 'var(--red)', marginBottom: '8px' }}>
-                ✕ {errorMsg}
-              </div>
-            )}
-
-            <div className="modal-actions">
-              <button className="mbtn-cancel" onClick={handleClose}>CANCEL</button>
-              <button className="mbtn-ok" onClick={handleRun}>▷ RUN TASK</button>
-            </div>
-          </>
-        )}
-
-        {step === 'running' && (
-          <div style={{ textAlign: 'center', padding: '20px 0' }}>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: '13px', color: 'var(--green)', marginBottom: '16px' }}>
-              ▷ EXECUTING TASK
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-              <span className="spinner" style={{ width: '24px', height: '24px' }} />
-            </div>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: '10px', color: 'var(--text3)' }}>{statusText}</div>
-          </div>
-        )}
-
-        {step === 'done' && result && (
-          <>
-            <h3>✓ TASK COMPLETED</h3>
-
-            <div style={{ fontFamily: 'var(--mono)', fontSize: '9px', color: 'var(--text3)', marginBottom: '6px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              ARTIFACT OUTPUT
-            </div>
-            <div className="artifact-box">{result.artifact.content}</div>
-
-            <div style={{ fontFamily: 'var(--mono)', fontSize: '9px', color: 'var(--text3)', marginBottom: '8px', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              PROOF OF WORK
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '12px' }}>
-              {[
-                { label: 'MODEL', val: result.proofLog.model },
-                { label: 'STATUS', val: result.proofLog.status },
-                { label: 'DURATION', val: `${(result.proofLog.durationMs / 1000).toFixed(1)}s` },
-                { label: 'EST. COST', val: `$${result.proofLog.estimatedCost.toFixed(4)}` },
-                { label: 'INPUT HASH', val: result.proofLog.inputHash.slice(0, 14) + '…' },
-                { label: 'OUTPUT HASH', val: result.proofLog.outputHash.slice(0, 14) + '…' },
-              ].map(row => (
-                <div key={row.label} className="econ-card">
-                  <div className="econ-lbl">{row.label}</div>
-                  <div style={{ fontFamily: 'var(--mono)', fontSize: '11px', color: 'var(--text)', fontWeight: 700, marginTop: '2px', wordBreak: 'break-all' }}>{row.val}</div>
-                </div>
-              ))}
-            </div>
-
-            <div className="modal-actions">
-              <button className="mbtn-ok" onClick={handleClose} style={{ flex: 'none', width: '100%' }}>✓ CLOSE</button>
-            </div>
-          </>
-        )}
-
-        {step === 'error' && (
-          <>
-            <h3 style={{ color: 'var(--red)' }}>✕ TASK FAILED</h3>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: '11px', color: 'var(--text2)', marginBottom: '16px' }}>
-              {errorMsg}
-            </div>
-            <div className="modal-actions">
-              <button className="mbtn-cancel" onClick={handleClose}>CLOSE</button>
-              <button className="mbtn-ok" onClick={() => setStep('form')}>↺ RETRY</button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  )
+  return <div className="modal-overlay open" onClick={e=>e.target===e.currentTarget&&onClose()}><div className="modal" style={{width:560}}>
+    {step==='form' ? <>
+      <h3>Post New Task</h3>
+      <label>Task title</label><input placeholder='Find 25 qualified B2B SaaS leads for Yacht Labs and draft personalized outreach.' value={f.title} onChange={e=>setF({...f,title:e.target.value})}/>
+      <label>Desired outcome</label><textarea value={f.desiredOutcome} onChange={e=>setF({...f,desiredOutcome:e.target.value})}/>
+      <label>Task type</label><select value={f.type} onChange={e=>setF({...f,type:e.target.value})}>{['Lead Generation','Cold Outreach','Market Research','Copywriting','Data Scraping','CRM Sync','Optimization'].map(v=><option key={v}>{v}</option>)}</select>
+      <label>Priority</label><select value={f.priority} onChange={e=>setF({...f,priority:e.target.value})}>{['low','normal','high','critical'].map(v=><option key={v}>{v}</option>)}</select>
+      <label>Budget limit</label><input type='number' value={f.budgetLimit} onChange={e=>setF({...f,budgetLimit:Number(e.target.value)})}/>
+      <label>Runtime limit (min)</label><input type='number' value={f.runtimeLimit} onChange={e=>setF({...f,runtimeLimit:Number(e.target.value)})}/>
+      <label>Output format</label><select value={f.outputFormat} onChange={e=>setF({...f,outputFormat:e.target.value})}>{['Table','Summary','CSV','JSON','Email Drafts','Research Brief'].map(v=><option key={v}>{v}</option>)}</select>
+      <label>Recurrence</label><select value={f.recurrence} onChange={e=>setF({...f,recurrence:e.target.value})}>{['one-time','daily','weekly','monthly'].map(v=><option key={v}>{v}</option>)}</select>
+      <div className='modal-actions'><button className='mbtn-cancel' onClick={onClose}>Cancel</button><button className='mbtn-ok' onClick={()=>{addEvent({type:'EXECUTION_PLAN_GENERATED',title:'Execution plan generated',description:f.title || 'New task',status:'info',taskType:f.type});setStep('plan')}}>Generate Execution Plan</button></div>
+    </> : <>
+      <h3>Execution Plan</h3>
+      <div className='card'>Recommended agents: {agents.map((a:any)=>a.name).join(', ')}</div>
+      <div className='card'>Estimated runtime: {Math.max(3,agents.length*2)}m · Estimated cost: ${(agents.reduce((n:number,a:any)=>n+(a.pricePerRun||0.1),0)*1.6).toFixed(2)}</div>
+      <div className='card'>Expected deliverable: {f.outputFormat} · Validation checks: source completeness, duplicate removal, output format, budget, SLA.</div>
+      <div className='card'>Risk level: {f.priority==='critical'?'Medium':'Low'} · Recurring contract eligible: Yes</div>
+      <div className='modal-actions'><button className='mbtn-cancel' onClick={()=>setStep('form')}>Edit Task</button><button className='mbtn-cancel' onClick={onClose}>Cancel</button><button className='mbtn-ok' onClick={()=>{runTask(f, agents); onClose(); setStep('form')}}>Approve & Run</button></div>
+    </>}
+  </div></div>
 }

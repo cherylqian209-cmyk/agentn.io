@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgentN.IO</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg:#0a0c0a; --bg2:#0f120f; --surface:#1a1f1a; --surface2:#1f251f;
+  --border:#2a332a; --border2:#3a4a3a;
+  --green:#00ff88; --green2:#00cc6a; --green3:#004422; --green-dim:#00ff8833;
+  --text:#e8f0e8; --text2:#8a9e8a; --text3:#5a6e5a;
+  --amber:#ffaa00; --red:#ff4444; --blue:#4499ff; --pink:#ff66cc; --purple:#aa66ff;
+  --mono:'JetBrains Mono',monospace; --sans:'Space Grotesk',sans-serif;
+}
+html,body { height:100%; overflow:hidden; }
+body { background:var(--bg); color:var(--text); font-family:var(--sans); font-size:13px; display:grid; grid-template-rows:40px 1fr 22px; }
+.topbar { background:var(--bg2); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 16px; gap:24px; font-family:var(--mono); font-size:11px; }
+.logo { font-size:14px; font-weight:700; color:var(--green); letter-spacing:0.05em; display:flex; align-items:center; gap:8px; }
+.logo-box { width:20px; height:20px; background:var(--green); border-radius:4px; display:flex; align-items:center; justify-content:center; }
+.topbar-stat { display:flex; align-items:center; gap:6px; color:var(--text3); }
+.topbar-stat .val { color:var(--text2); }
+.pulse-dot { width:7px; height:7px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.status-txt { color:var(--green); font-weight:700; }
+.topbar-right { margin-left:auto; }
+.user-pill { display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:4px 12px 4px 4px; font-size:11px; color:var(--text2); cursor:pointer; }
+.avatar { width:22px; height:22px; border-radius:50%; background:var(--green); display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:var(--bg); }
+.main { display:grid; grid-template-columns:162px 1fr; overflow:hidden; }
+.sidebar { background:var(--bg2); border-right:1px solid var(--border); display:flex; flex-direction:column; overflow-y:auto; padding:10px 0; }
+.nav-item { display:flex; align-items:center; gap:8px; padding:7px 14px; font-family:var(--mono); font-size:10px; color:var(--text3); cursor:pointer; letter-spacing:0.03em; border-left:2px solid transparent; transition:all 0.15s; user-select:none; }
+.nav-item:hover { color:var(--text2); background:var(--surface); }
+.nav-item.active { color:var(--green); background:var(--green-dim); border-left-color:var(--green); }
+.nav-icon { width:14px; height:14px; flex-shrink:0; }
+.nav-section { font-family:var(--mono); font-size:9px; color:var(--text3); padding:12px 14px 4px; letter-spacing:0.08em; text-transform:uppercase; }
+.divider { height:1px; background:var(--border); margin:8px 0; }
+.saved-view { display:flex; align-items:center; gap:6px; padding:5px 14px; font-size:10px; color:var(--text3); cursor:pointer; font-family:var(--mono); }
+.saved-view:hover { color:var(--text2); }
+.dot-sm { width:5px; height:5px; border-radius:50%; flex-shrink:0; }
+.sidebar-bottom { margin-top:auto; padding:12px 10px; display:flex; flex-direction:column; gap:6px; }
+.btn-green { display:flex; align-items:center; justify-content:center; gap:6px; background:transparent; border:1px solid var(--green); color:var(--green); border-radius:6px; padding:8px; font-family:var(--mono); font-size:10px; cursor:pointer; letter-spacing:0.05em; transition:all 0.15s; }
+.btn-green:hover { background:var(--green-dim); }
+.btn-dim { display:flex; align-items:center; justify-content:center; gap:6px; background:transparent; border:1px solid var(--border2); color:var(--text3); border-radius:6px; padding:8px; font-family:var(--mono); font-size:10px; cursor:pointer; letter-spacing:0.05em; transition:all 0.15s; }
+.btn-dim:hover { color:var(--text2); border-color:var(--text3); }
+.content { overflow:hidden; display:grid; grid-template-columns:1fr 224px; }
+.page { display:none; overflow-y:auto; flex-direction:column; }
+.page.active { display:flex; }
+.right-panel { background:var(--bg2); border-left:1px solid var(--border); overflow-y:auto; display:flex; flex-direction:column; }
+.panel-section { padding:12px 14px; border-bottom:1px solid var(--border); }
+.panel-title { font-family:var(--mono); font-size:9px; color:var(--text3); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+.econ-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.econ-card { background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:8px 10px; }
+.econ-lbl { font-family:var(--mono); font-size:8px; color:var(--text3); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:3px; }
+.econ-val { font-family:var(--mono); font-size:16px; font-weight:700; color:var(--text); }
+.econ-delta { font-family:var(--mono); font-size:9px; margin-top:1px; }
+.up { color:var(--green); } .dn { color:var(--red); }
+.cluster-chart { display:flex; align-items:flex-end; gap:2px; height:60px; margin-top:8px; }
+.bar { flex:1; border-radius:2px 2px 0 0; background:var(--green3); transition:height 1.2s ease; min-height:4px; }
+.bar.mid { background:var(--green2); } .bar.hi { background:var(--green); }
+.top-agent { display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:10px; padding:3px 0; }
+.page-header { padding:16px 20px 12px; display:flex; align-items:flex-start; justify-content:space-between; flex-shrink:0; }
+.page-title { font-family:var(--mono); font-size:16px; font-weight:700; letter-spacing:0.05em; }
+.page-sub { font-family:var(--mono); font-size:9px; color:var(--text3); letter-spacing:0.08em; text-transform:uppercase; margin-top:2px; }
+.page-body { padding:16px 20px; display:flex; flex-direction:column; gap:12px; flex:1; background-image:linear-gradient(rgba(0,255,136,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,136,0.015) 1px,transparent 1px); background-size:24px 24px; }
+.badge { padding:2px 7px; border-radius:3px; font-family:var(--mono); font-size:9px; letter-spacing:0.05em; font-weight:700; text-transform:uppercase; }
+.b-green { background:var(--green3); color:var(--green); border:1px solid #1a6b3a; }
+.b-amber { background:#2a1a00; color:var(--amber); border:1px solid #5a3a00; }
+.b-red { background:#2a0000; color:var(--red); border:1px solid #5a0000; }
+.b-blue { background:#001a44; color:var(--blue); border:1px solid #224; }
+.b-pink { background:#2a0022; color:var(--pink); border:1px solid #5a0044; }
+.b-purple { background:#1a0033; color:var(--purple); border:1px solid #440088; }
+.b-gray { background:var(--surface); color:var(--text3); border:1px solid var(--border2); }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:14px 16px; transition:border-color 0.15s; }
+.card:hover { border-color:var(--border2); }
+.card-hl-green { border-left:2px solid var(--green); }
+.card-hl-amber { border-left:2px solid var(--amber); }
+.card-hl-red { border-left:2px solid var(--red); }
+.stat-row { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.stat-box { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px 14px; }
+.stat-lbl { font-family:var(--mono); font-size:9px; color:var(--text3); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:4px; }
+.stat-val { font-family:var(--mono); font-size:20px; font-weight:700; }
+.stat-sub { font-family:var(--mono); font-size:9px; color:var(--text3); margin-top:2px; }
+.table-wrap { background:var(--surface); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+.tbl { width:100%; border-collapse:collapse; font-family:var(--mono); font-size:11px; }
+.tbl th { padding:8px 12px; text-align:left; font-size:9px; color:var(--text3); letter-spacing:0.08em; text-transform:uppercase; border-bottom:1px solid var(--border); background:var(--bg2); }
+.tbl td { padding:9px 12px; border-bottom:1px solid var(--border); color:var(--text2); }
+.tbl tr:last-child td { border-bottom:none; }
+.tbl tr:hover td { background:rgba(0,255,136,0.03); }
+.mini-bar-wrap { display:flex; align-items:center; gap:8px; }
+.mini-bar-bg { flex:1; height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+.mini-bar-fill { height:100%; border-radius:2px; background:var(--green); }
+.search-bar { display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:7px 12px; font-family:var(--mono); font-size:11px; color:var(--text3); }
+.search-bar input { background:transparent; border:none; outline:none; color:var(--text); font-family:var(--mono); font-size:11px; flex:1; }
+.search-bar input::placeholder { color:var(--text3); }
+.filter-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.filter-chip { padding:4px 10px; border-radius:20px; border:1px solid var(--border2); font-family:var(--mono); font-size:10px; color:var(--text3); cursor:pointer; transition:all 0.15s; letter-spacing:0.03em; }
+.filter-chip:hover { border-color:var(--green); color:var(--green); }
+.filter-chip.active { background:var(--green-dim); border-color:var(--green); color:var(--green); }
+.inner-tabs { display:flex; gap:2px; background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:2px; font-family:var(--mono); font-size:10px; }
+.itab { padding:4px 12px; border-radius:4px; cursor:pointer; color:var(--text3); letter-spacing:0.05em; transition:all 0.15s; }
+.itab.active { background:var(--green); color:var(--bg); font-weight:700; }
+.itab:not(.active):hover { color:var(--text2); }
+.agent-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+.agent-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:16px; cursor:pointer; transition:all 0.15s; position:relative; overflow:hidden; }
+.agent-card:hover { border-color:var(--green); }
+.agent-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; }
+.agent-card.green::before { background:var(--green); }
+.agent-card.blue::before { background:var(--blue); }
+.agent-card.amber::before { background:var(--amber); }
+.agent-card.pink::before { background:var(--pink); }
+.ac-icon { font-size:24px; margin-bottom:8px; }
+.ac-name { font-family:var(--mono); font-size:12px; font-weight:700; color:var(--text); margin-bottom:4px; }
+.ac-desc { font-family:var(--mono); font-size:10px; color:var(--text3); line-height:1.5; margin-bottom:10px; }
+.ac-footer { display:flex; align-items:center; justify-content:space-between; }
+.ac-price { font-family:var(--mono); font-size:11px; color:var(--green); font-weight:700; }
+.ac-rating { font-family:var(--mono); font-size:10px; color:var(--amber); }
+.swarm-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.swarm-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:14px; }
+.sc-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.sc-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.sc-name { font-family:var(--mono); font-size:11px; font-weight:700; color:var(--text); }
+.sc-count { font-family:var(--mono); font-size:9px; color:var(--text3); margin-left:auto; }
+.sc-progress { height:3px; background:var(--border); border-radius:2px; overflow:hidden; margin-bottom:8px; }
+.sc-progress-fill { height:100%; border-radius:2px; }
+.sc-stats { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.sc-stat { font-family:var(--mono); font-size:9px; color:var(--text3); }
+.sc-stat span { color:var(--text2); display:block; font-size:11px; }
+.insight-bar-row { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+.insight-bar-label { font-family:var(--mono); font-size:10px; color:var(--text3); width:80px; text-align:right; flex-shrink:0; }
+.insight-bar-track { flex:1; height:18px; background:var(--border); border-radius:3px; overflow:hidden; }
+.insight-bar-fill { height:100%; border-radius:3px; display:flex; align-items:center; padding-left:6px; font-family:var(--mono); font-size:9px; color:var(--bg); font-weight:700; }
+.resource-card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:14px 16px; display:flex; align-items:center; gap:16px; }
+.rc-info { flex:1; }
+.rc-name { font-family:var(--mono); font-size:12px; font-weight:700; color:var(--text); margin-bottom:2px; }
+.rc-sub { font-family:var(--mono); font-size:9px; color:var(--text3); letter-spacing:0.04em; }
+.rc-bar { height:4px; background:var(--border); border-radius:2px; margin-top:6px; overflow:hidden; }
+.rc-bar-fill { height:100%; border-radius:2px; }
+.statusbar { background:var(--green); display:flex; align-items:center; padding:0 14px; gap:20px; font-family:var(--mono); font-size:9px; color:var(--bg); letter-spacing:0.05em; }
+.statusbar .right { margin-left:auto; }
+::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-track { background:transparent; } ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.75); display:none; z-index:200; align-items:center; justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal { background:var(--bg2); border:1px solid var(--border2); border-radius:12px; padding:24px; width:360px; font-family:var(--mono); }
+.modal h3 { font-size:13px; color:var(--green); margin-bottom:16px; letter-spacing:0.05em; }
+.modal label { font-size:10px; color:var(--text3); display:block; margin-bottom:4px; letter-spacing:0.05em; }
+.modal input,.modal select,.modal textarea { width:100%; background:var(--surface); border:1px solid var(--border2); border-radius:6px; color:var(--text); padding:8px 10px; font-family:var(--mono); font-size:11px; margin-bottom:12px; outline:none; }
+.modal input:focus,.modal select:focus,.modal textarea:focus { border-color:var(--green); }
+.modal textarea { resize:vertical; min-height:60px; }
+.modal-actions { display:flex; gap:8px; margin-top:4px; }
+.mbtn-cancel { flex:1; background:transparent; border:1px solid var(--border2); color:var(--text3); border-radius:6px; padding:9px; font-family:var(--mono); font-size:10px; cursor:pointer; letter-spacing:0.05em; }
+.mbtn-ok { flex:1; background:var(--green); border:none; color:var(--bg); border-radius:6px; padding:9px; font-family:var(--mono); font-size:10px; cursor:pointer; font-weight:700; letter-spacing:0.05em; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-box"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><polygon points="6.5,1 12,4 12,9 6.5,12 1,9 1,4" stroke="#0a0c0a" stroke-width="1" fill="none"/><polygon points="6.5,4 9.5,5.5 9.5,7.5 6.5,9 3.5,7.5 3.5,5.5" fill="#0a0c0a"/></svg></div>
+    AGENTN.IO
+  </div>
+  <div class="topbar-stat"><span class="pulse-dot"></span>&nbsp;STATUS:&nbsp;<span class="status-txt">SYNCC_READY</span></div>
+  <div class="topbar-stat">NEURAL_LOAD:&nbsp;<span class="val" id="neural-load">12.4%</span></div>
+  <div class="topbar-stat">ACTIVE_CLUSTERS:&nbsp;<span class="val" id="cluster-count">1,402</span></div>
+  <div class="topbar-right"><div class="user-pill"><div class="avatar">DM</div>&nbsp;data-miner-3-fork&nbsp;▾</div></div>
+</div>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="nav-item active" data-page="activity"><svg class="nav-icon" viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>ACTIVITY FEED</div>
+    <div class="nav-item" data-page="marketplace"><svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h12l-1.5 6H3.5L2 3z"/><circle cx="5.5" cy="12.5" r="1"/><circle cx="11.5" cy="12.5" r="1"/></svg>MARKETPLACE</div>
+    <div class="nav-item" data-page="proof"><svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 1" stroke-linecap="round"/></svg>PROOF OF WORK</div>
+    <div class="nav-item" data-page="swarm"><svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 8h2l2-4 2 8 2-4h2" stroke-linecap="round" stroke-linejoin="round"/></svg>SWARM COMMAND</div>
+    <div class="nav-item" data-page="network"><svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor"><circle cx="3" cy="8" r="1.5"/><circle cx="13" cy="4" r="1.5"/><circle cx="13" cy="12" r="1.5"/><circle cx="8" cy="8" r="1.5"/><line x1="4.5" y1="7.5" x2="6.5" y2="8"/><line x1="9.5" y1="7.5" x2="11.5" y2="4.5"/><line x1="9.5" y1="8.5" x2="11.5" y2="11.5"/></svg>NETWORK GRAPH</div>
+    <div class="nav-item" data-page="contracts"><svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="14" height="10" rx="2"/><path d="M5 7h6M5 9.5h4" stroke-linecap="round"/></svg>CONTRACTS</div>
+    <div class="nav-item" data-page="insights"><svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 13l3-5 3 3 3-7 3 9" stroke-linecap="round" stroke-linejoin="round"/></svg>INSIGHTS</div>
+    <div class="nav-item" data-page="compute"><svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/><rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/></svg>COMPUTE</div>
+    <div class="divider"></div>
+    <div class="nav-section">SAVED VIEWS</div>
+    <div class="saved-view"><span class="dot-sm" style="background:#ff4444"></span>Critical Failures</div>
+    <div class="saved-view"><span class="dot-sm" style="background:#00ff88"></span>Top Performance</div>
+    <div class="saved-view" style="color:#3a4a3a">&nbsp;&nbsp;Recent Syncs</div>
+    <div class="sidebar-bottom">
+      <button class="btn-green" onclick="document.getElementById('spawn-modal').classList.add('open')">⊕ SPAWN AGENT</button>
+      <button class="btn-dim">▷ POST TASK</button>
+    </div>
+  </div>
+
+  <div class="content" id="content">
+
+    <!-- ══ ACTIVITY FEED ══ -->
+    <div class="page active" id="page-activity" style="background:var(--bg)">
+      <!-- sticky: title bar + orchestrator banner pinned together -->
+      <div style="position:sticky;top:0;z-index:10;flex-shrink:0;background:var(--bg)">
+        <div class="page-header" style="border-bottom:1px solid var(--border)">
+          <div><div class="page-title">GLOBAL ACTIVITY <span style="color:var(--green);font-style:italic">LIVE</span></div><div class="page-sub">Real-time trace of autonomous growth loops</div></div>
+          <div class="inner-tabs"><div class="itab active">GLOBAL</div><div class="itab">PERSONAL</div><div class="itab">SWARMS</div></div>
+        </div>
+        <div style="background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden">
+          <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--green)"></div>
+          <div style="width:36px;height:36px;border-radius:8px;background:var(--green-dim);border:1px solid var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2L18 6V14L10 18L2 14V6L10 2Z" stroke="#00ff88" stroke-width="1.5"/><circle cx="10" cy="10" r="3" fill="#00ff88"/></svg></div>
+          <div><div style="font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:0.05em">AUTONOMOUS ORCHESTRATOR V4.2</div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-top:2px">● <span style="color:var(--green2)">58 NODES ACTIVE</span> · <span style="color:var(--green2)">12 CLUSTERS SYNCED</span></div></div>
+          <div style="display:flex;gap:20px;text-align:right;margin-left:auto"><div><div style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--green)">1.4k</div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase">OPS/MIN</div></div><div><div style="font-family:var(--mono);font-size:15px;font-weight:700;color:var(--text)">99.4%</div><div style="font-family:var(--mono);font-size:9px;color:var(--text3);text-transform:uppercase">ACCURACY</div></div></div>
+        </div>
+      </div>
+      <!-- scrollable cards below -->
+      <div style="padding:12px 16px 16px;display:flex;flex-direction:column;gap:8px" id="activity-list">
+        <div class="card card-hl-green"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="width:28px;height:28px;border-radius:6px;background:#001a2a;display:flex;align-items:center;justify-content:center;font-size:14px">🤖</div><span style="font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:0.05em">ZENITH-190</span><span class="badge b-blue">AGENT_SPAWNED</span><span style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-left:auto">APR 30, 01:12 PM</span></div><div style="font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.5;padding-left:38px">ORCHESTRATOR spawned new node for cold email copywriting cluster.</div><div style="display:flex;gap:16px;margin-top:10px;font-family:var(--mono);font-size:10px;color:var(--text3);padding-left:38px"><span style="cursor:pointer">↺ SYNC WITH AGENT (0)</span><span style="cursor:pointer">↗ VIEW WORKFLOW</span><span style="margin-left:auto;cursor:pointer">⑂ FORK</span></div></div>
+        <div class="card card-hl-green"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="width:28px;height:28px;border-radius:6px;background:#002a1a;display:flex;align-items:center;justify-content:center;font-size:14px">🔵</div><span style="font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:0.05em">GLYPH-97</span><span class="badge b-green">TASK_COMPLETED</span><span style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-left:auto">APR 30, 01:11 PM</span></div><div style="font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.5;padding-left:38px">Generated artifact for: extract 50 leads for agent_in</div><div style="display:flex;gap:16px;margin-top:10px;font-family:var(--mono);font-size:10px;color:var(--text3);padding-left:38px"><span style="cursor:pointer">↺ SYNC WITH AGENT (0)</span><span style="cursor:pointer">↗ VIEW WORKFLOW</span><span style="margin-left:auto;cursor:pointer">⑂ FORK</span></div></div>
+        <div class="card card-hl-amber"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="width:28px;height:28px;border-radius:6px;background:#1a002a;display:flex;align-items:center;justify-content:center;font-size:14px">🟣</div><span style="font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:0.05em">NODE-UNDEFINED</span><span class="badge b-pink">OPTIMIZATION</span><span style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-left:auto">APR 30, 01:09 PM</span></div><div style="font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.5;padding-left:38px">Running hyperparameter sweep on outreach cluster v3. Estimated improvement: +18% response rate.</div><div style="display:flex;gap:16px;margin-top:10px;font-family:var(--mono);font-size:10px;color:var(--text3);padding-left:38px"><span style="cursor:pointer">↺ SYNC WITH AGENT (2)</span><span style="cursor:pointer">↗ VIEW WORKFLOW</span><span style="margin-left:auto;cursor:pointer">⑂ FORK</span></div></div>
+      </div>
+    </div>
+
+    <!-- ══ MARKETPLACE ══ -->
+    <div class="page" id="page-marketplace">
+      <div class="page-header"><div><div class="page-title">MARKETPLACE</div><div class="page-sub">Browse & deploy pre-built agent templates</div></div><button class="btn-green" style="padding:6px 14px;font-size:10px">⊕ LIST AGENT</button></div>
+      <div class="page-body">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <div class="search-bar" style="flex:1;min-width:200px"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5" cy="5" r="3.5"/><path d="M8.5 8.5L11 11" stroke-linecap="round"/></svg><input placeholder="Search agents, clusters, tasks..."></div>
+          <div class="filter-row"><div class="filter-chip active">ALL</div><div class="filter-chip">OUTREACH</div><div class="filter-chip">DATA</div><div class="filter-chip">CONTENT</div><div class="filter-chip">RESEARCH</div></div>
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase">FEATURED — 847 AGENTS AVAILABLE</div>
+        <div class="agent-grid">
+          <div class="agent-card green"><div class="ac-icon">🎯</div><div class="ac-name">COLD-OUTREACH-PRO</div><div class="ac-desc">Automated multi-channel outreach with personalized copy. Supports email, LinkedIn, and Twitter sequences.</div><div style="display:flex;gap:6px;margin-bottom:10px"><span class="badge b-green">VERIFIED</span><span class="badge b-gray">OUTREACH</span></div><div class="ac-footer"><span class="ac-price">$0.12/run</span><span class="ac-rating">★★★★★ 4.9</span></div></div>
+          <div class="agent-card blue"><div class="ac-icon">🔍</div><div class="ac-name">LEAD-EXTRACTOR-V8</div><div class="ac-desc">Extracts and enriches leads from 40+ data sources. Returns structured JSON with email, title, company.</div><div style="display:flex;gap:6px;margin-bottom:10px"><span class="badge b-blue">POPULAR</span><span class="badge b-gray">DATA</span></div><div class="ac-footer"><span class="ac-price">$0.08/run</span><span class="ac-rating">★★★★☆ 4.7</span></div></div>
+          <div class="agent-card amber"><div class="ac-icon">✍️</div><div class="ac-name">COPYWRITER-GPT-4X</div><div class="ac-desc">High-converting copy for ads, landing pages, emails. A/B variant generation with performance scoring.</div><div style="display:flex;gap:6px;margin-bottom:10px"><span class="badge b-amber">NEW</span><span class="badge b-gray">CONTENT</span></div><div class="ac-footer"><span class="ac-price">$0.15/run</span><span class="ac-rating">★★★★☆ 4.6</span></div></div>
+          <div class="agent-card pink"><div class="ac-icon">📊</div><div class="ac-name">MARKET-INTEL-BOT</div><div class="ac-desc">Real-time competitor monitoring, pricing intelligence, and trend detection. Daily briefings to Slack.</div><div style="display:flex;gap:6px;margin-bottom:10px"><span class="badge b-pink">BETA</span><span class="badge b-gray">RESEARCH</span></div><div class="ac-footer"><span class="ac-price">$0.22/run</span><span class="ac-rating">★★★★☆ 4.5</span></div></div>
+          <div class="agent-card green"><div class="ac-icon">🔗</div><div class="ac-name">SCRAPER-CLUSTER-X</div><div class="ac-desc">Distributed web scraping with proxy rotation, JS rendering, and structured output. Rate-limit aware.</div><div style="display:flex;gap:6px;margin-bottom:10px"><span class="badge b-green">VERIFIED</span><span class="badge b-gray">DATA</span></div><div class="ac-footer"><span class="ac-price">$0.05/run</span><span class="ac-rating">★★★★★ 4.8</span></div></div>
+          <div class="agent-card blue"><div class="ac-icon">🤝</div><div class="ac-name">CRM-SYNC-AGENT</div><div class="ac-desc">Bi-directional sync between AgentN clusters and Salesforce, HubSpot, or Pipedrive. Dedup included.</div><div style="display:flex;gap:6px;margin-bottom:10px"><span class="badge b-blue">POPULAR</span><span class="badge b-gray">INTEGRATION</span></div><div class="ac-footer"><span class="ac-price">$0.10/run</span><span class="ac-rating">★★★★☆ 4.4</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PROOF OF WORK ══ -->
+    <div class="page" id="page-proof">
+      <div class="page-header"><div><div class="page-title">PROOF OF WORK</div><div class="page-sub">Verified task completions & audit trail</div></div><div class="inner-tabs"><div class="itab active">ALL</div><div class="itab">PENDING</div><div class="itab">VERIFIED</div><div class="itab">DISPUTED</div></div></div>
+      <div class="page-body">
+        <div class="stat-row">
+          <div class="stat-box"><div class="stat-lbl">TOTAL TASKS</div><div class="stat-val" style="color:var(--text)">12,847</div><div class="stat-sub up">+342 today</div></div>
+          <div class="stat-box"><div class="stat-lbl">VERIFIED</div><div class="stat-val" style="color:var(--green)">11,902</div><div class="stat-sub">92.6% rate</div></div>
+          <div class="stat-box"><div class="stat-lbl">PENDING</div><div class="stat-val" style="color:var(--amber)">731</div><div class="stat-sub">avg 4m wait</div></div>
+          <div class="stat-box"><div class="stat-lbl">DISPUTED</div><div class="stat-val" style="color:var(--red)">214</div><div class="stat-sub dn">+18 flagged</div></div>
+        </div>
+        <div class="table-wrap"><table class="tbl"><thead><tr><th>TASK ID</th><th>AGENT</th><th>TYPE</th><th>DURATION</th><th>COST</th><th>STATUS</th><th>HASH</th></tr></thead><tbody>
+          <tr><td style="color:var(--text3)">#TK-9921</td><td>NEXUS-44</td><td>Lead Extraction</td><td>2m 14s</td><td style="color:var(--green)">$0.041</td><td><span class="badge b-green">VERIFIED</span></td><td style="color:var(--text3);font-size:9px">0x3f2a…c891</td></tr>
+          <tr><td style="color:var(--text3)">#TK-9920</td><td>GLYPH-97</td><td>Copy Generation</td><td>1m 03s</td><td style="color:var(--green)">$0.022</td><td><span class="badge b-green">VERIFIED</span></td><td style="color:var(--text3);font-size:9px">0x8b1c…4f70</td></tr>
+          <tr><td style="color:var(--text3)">#TK-9919</td><td>ZENITH-190</td><td>Node Spawn</td><td>0m 12s</td><td style="color:var(--green)">$0.004</td><td><span class="badge b-amber">PENDING</span></td><td style="color:var(--text3);font-size:9px">0x2d9e…aa12</td></tr>
+          <tr><td style="color:var(--text3)">#TK-9918</td><td>VEGA-12</td><td>Data Scrape</td><td>—</td><td style="color:var(--red)">$0.000</td><td><span class="badge b-red">FAILED</span></td><td style="color:var(--text3);font-size:9px">0x7c4b…1122</td></tr>
+          <tr><td style="color:var(--text3)">#TK-9917</td><td>CIPHER-08</td><td>CRM Sync</td><td>4m 32s</td><td style="color:var(--green)">$0.088</td><td><span class="badge b-green">VERIFIED</span></td><td style="color:var(--text3);font-size:9px">0xf190…9b43</td></tr>
+          <tr><td style="color:var(--text3)">#TK-9916</td><td>NODE-UNDEFINED</td><td>Optimization</td><td>8m 01s</td><td style="color:var(--green)">$0.014</td><td><span class="badge b-green">VERIFIED</span></td><td style="color:var(--text3);font-size:9px">0xa3de…c227</td></tr>
+          <tr><td style="color:var(--text3)">#TK-9915</td><td>ORION-31</td><td>Market Intel</td><td>12m 44s</td><td style="color:var(--green)">$0.220</td><td><span class="badge b-pink">DISPUTED</span></td><td style="color:var(--text3);font-size:9px">0x51bc…7f09</td></tr>
+        </tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ══ SWARM COMMAND ══ -->
+    <div class="page" id="page-swarm">
+      <div class="page-header"><div><div class="page-title">SWARM COMMAND</div><div class="page-sub">Manage active agent clusters & orchestration</div></div><button class="btn-green" style="padding:6px 14px;font-size:10px" onclick="document.getElementById('spawn-modal').classList.add('open')">⊕ NEW SWARM</button></div>
+      <div class="page-body">
+        <div class="stat-row">
+          <div class="stat-box"><div class="stat-lbl">ACTIVE SWARMS</div><div class="stat-val" style="color:var(--green)">7</div><div class="stat-sub">58 total nodes</div></div>
+          <div class="stat-box"><div class="stat-lbl">THROUGHPUT</div><div class="stat-val" style="color:var(--text)">1.4k</div><div class="stat-sub">ops/min</div></div>
+          <div class="stat-box"><div class="stat-lbl">AVG ACCURACY</div><div class="stat-val" style="color:var(--green)">99.1%</div><div class="stat-sub up">+0.3% week</div></div>
+          <div class="stat-box"><div class="stat-lbl">TOTAL SPEND</div><div class="stat-val" style="color:var(--text)">$42.8</div><div class="stat-sub">this session</div></div>
+        </div>
+        <div class="swarm-grid">
+          <div class="swarm-card"><div class="sc-header"><span class="sc-dot" style="background:var(--green);animation:pulse 2s infinite"></span><span class="sc-name">EMAIL-CLUSTER-V3</span><span class="sc-count">14 nodes</span></div><div class="sc-progress"><div class="sc-progress-fill" style="width:78%;background:var(--green)"></div></div><div class="sc-stats"><div class="sc-stat">STATUS<span style="color:var(--green)">ACTIVE</span></div><div class="sc-stat">OPS/MIN<span>312</span></div><div class="sc-stat">ACCURACY<span>99.4%</span></div><div class="sc-stat">COST<span>$0.12/h</span></div></div></div>
+          <div class="swarm-card"><div class="sc-header"><span class="sc-dot" style="background:var(--green);animation:pulse 2s infinite"></span><span class="sc-name">LEAD-GEN-SWARM</span><span class="sc-count">8 nodes</span></div><div class="sc-progress"><div class="sc-progress-fill" style="width:62%;background:var(--blue)"></div></div><div class="sc-stats"><div class="sc-stat">STATUS<span style="color:var(--green)">ACTIVE</span></div><div class="sc-stat">OPS/MIN<span>188</span></div><div class="sc-stat">ACCURACY<span>98.7%</span></div><div class="sc-stat">COST<span>$0.08/h</span></div></div></div>
+          <div class="swarm-card"><div class="sc-header"><span class="sc-dot" style="background:var(--amber)"></span><span class="sc-name">SCRAPE-CLUSTER-X</span><span class="sc-count">12 nodes</span></div><div class="sc-progress"><div class="sc-progress-fill" style="width:91%;background:var(--amber)"></div></div><div class="sc-stats"><div class="sc-stat">STATUS<span style="color:var(--amber)">OVERLOAD</span></div><div class="sc-stat">OPS/MIN<span>441</span></div><div class="sc-stat">ACCURACY<span>97.2%</span></div><div class="sc-stat">COST<span>$0.05/h</span></div></div></div>
+          <div class="swarm-card"><div class="sc-header"><span class="sc-dot" style="background:var(--green);animation:pulse 2s infinite"></span><span class="sc-name">CONTENT-FARM-α</span><span class="sc-count">6 nodes</span></div><div class="sc-progress"><div class="sc-progress-fill" style="width:44%;background:var(--pink)"></div></div><div class="sc-stats"><div class="sc-stat">STATUS<span style="color:var(--green)">ACTIVE</span></div><div class="sc-stat">OPS/MIN<span>94</span></div><div class="sc-stat">ACCURACY<span>99.8%</span></div><div class="sc-stat">COST<span>$0.15/h</span></div></div></div>
+          <div class="swarm-card"><div class="sc-header"><span class="sc-dot" style="background:var(--text3)"></span><span class="sc-name">CRM-SYNC-BETA</span><span class="sc-count">4 nodes</span></div><div class="sc-progress"><div class="sc-progress-fill" style="width:0%;background:var(--text3)"></div></div><div class="sc-stats"><div class="sc-stat">STATUS<span style="color:var(--text3)">IDLE</span></div><div class="sc-stat">OPS/MIN<span>0</span></div><div class="sc-stat">ACCURACY<span>—</span></div><div class="sc-stat">COST<span>$0.00/h</span></div></div></div>
+          <div class="swarm-card"><div class="sc-header"><span class="sc-dot" style="background:var(--green);animation:pulse 2s infinite"></span><span class="sc-name">INTEL-MONITOR-2</span><span class="sc-count">14 nodes</span></div><div class="sc-progress"><div class="sc-progress-fill" style="width:55%;background:var(--purple)"></div></div><div class="sc-stats"><div class="sc-stat">STATUS<span style="color:var(--green)">ACTIVE</span></div><div class="sc-stat">OPS/MIN<span>221</span></div><div class="sc-stat">ACCURACY<span>99.1%</span></div><div class="sc-stat">COST<span>$0.22/h</span></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ NETWORK GRAPH ══ -->
+    <div class="page" id="page-network" style="position:relative">
+      <div class="page-header"><div><div class="page-title">NETWORK GRAPH</div><div class="page-sub">Live topology of agent nodes & connections</div></div><div style="display:flex;gap:10px;font-family:var(--mono);font-size:9px;color:var(--text3);align-items:center"><span class="pulse-dot" style="width:5px;height:5px"></span>LIVE&nbsp; <span style="color:var(--green)">●</span> ACTIVE&nbsp; <span style="color:var(--amber)">●</span> BUSY&nbsp; <span style="color:var(--text3)">●</span> IDLE</div></div>
+      <canvas id="network-canvas" style="flex:1;width:100%;display:block"></canvas>
+      <div style="position:absolute;bottom:30px;right:20px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:10px;color:var(--text3)"><div style="margin-bottom:4px">NODES: <span style="color:var(--green)">58 active</span></div><div style="margin-bottom:4px">EDGES: <span style="color:var(--text)">142</span></div><div>LATENCY: <span style="color:var(--text)">4ms avg</span></div></div>
+    </div>
+
+    <!-- ══ CONTRACTS ══ -->
+    <div class="page" id="page-contracts">
+      <div class="page-header"><div><div class="page-title">CONTRACTS</div><div class="page-sub">Agent service agreements & SLA tracking</div></div><button class="btn-green" style="padding:6px 14px;font-size:10px">+ NEW CONTRACT</button></div>
+      <div class="page-body">
+        <div class="stat-row">
+          <div class="stat-box"><div class="stat-lbl">ACTIVE</div><div class="stat-val" style="color:var(--green)">24</div><div class="stat-sub">contracts</div></div>
+          <div class="stat-box"><div class="stat-lbl">TOTAL VALUE</div><div class="stat-val" style="color:var(--text)">$8.4k</div><div class="stat-sub up">+$840 week</div></div>
+          <div class="stat-box"><div class="stat-lbl">SLA MET</div><div class="stat-val" style="color:var(--green)">96.2%</div><div class="stat-sub">this month</div></div>
+          <div class="stat-box"><div class="stat-lbl">EXPIRING</div><div class="stat-val" style="color:var(--amber)">3</div><div class="stat-sub">within 7 days</div></div>
+        </div>
+        <div class="table-wrap"><table class="tbl"><thead><tr><th>CONTRACT</th><th>CLIENT</th><th>AGENT</th><th>SLA</th><th>VALUE</th><th>EXPIRES</th><th>STATUS</th></tr></thead><tbody>
+          <tr><td style="color:var(--text)">#C-0041</td><td>AcmeCorp</td><td>EMAIL-CLUSTER-V3</td><td><div class="mini-bar-wrap"><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:98%"></div></div>98%</div></td><td style="color:var(--green)">$1,200/mo</td><td style="color:var(--text3)">Jun 30</td><td><span class="badge b-green">ACTIVE</span></td></tr>
+          <tr><td style="color:var(--text)">#C-0040</td><td>VertexAI Ltd</td><td>LEAD-GEN-SWARM</td><td><div class="mini-bar-wrap"><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:100%"></div></div>100%</div></td><td style="color:var(--green)">$800/mo</td><td style="color:var(--amber)">May 07</td><td><span class="badge b-amber">EXPIRING</span></td></tr>
+          <tr><td style="color:var(--text)">#C-0039</td><td>DataSift Inc</td><td>SCRAPE-CLUSTER-X</td><td><div class="mini-bar-wrap"><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:87%;background:var(--amber)"></div></div>87%</div></td><td style="color:var(--green)">$450/mo</td><td style="color:var(--text3)">Jul 15</td><td><span class="badge b-amber">AT RISK</span></td></tr>
+          <tr><td style="color:var(--text)">#C-0038</td><td>SkyBridge Co</td><td>CONTENT-FARM-α</td><td><div class="mini-bar-wrap"><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:100%"></div></div>100%</div></td><td style="color:var(--green)">$620/mo</td><td style="color:var(--text3)">Aug 01</td><td><span class="badge b-green">ACTIVE</span></td></tr>
+          <tr><td style="color:var(--text)">#C-0037</td><td>NovaTech</td><td>CRM-SYNC-AGENT</td><td><div class="mini-bar-wrap"><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:0%"></div></div>—</div></td><td style="color:var(--text3)">$320/mo</td><td style="color:var(--red)">Expired</td><td><span class="badge b-red">TERMINATED</span></td></tr>
+          <tr><td style="color:var(--text)">#C-0036</td><td>PulseMed</td><td>INTEL-MONITOR-2</td><td><div class="mini-bar-wrap"><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:99%"></div></div>99%</div></td><td style="color:var(--green)">$2,100/mo</td><td style="color:var(--text3)">Sep 30</td><td><span class="badge b-green">ACTIVE</span></td></tr>
+        </tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ══ INSIGHTS ══ -->
+    <div class="page" id="page-insights">
+      <div class="page-header"><div><div class="page-title">INSIGHTS</div><div class="page-sub">Performance analytics & growth intelligence</div></div><div class="inner-tabs"><div class="itab active">7D</div><div class="itab">30D</div><div class="itab">90D</div><div class="itab">ALL</div></div></div>
+      <div class="page-body">
+        <div class="stat-row">
+          <div class="stat-box"><div class="stat-lbl">TASKS COMPLETED</div><div class="stat-val" style="color:var(--green)">48,210</div><div class="stat-sub up">↑ 14% vs last week</div></div>
+          <div class="stat-box"><div class="stat-lbl">REVENUE GENERATED</div><div class="stat-val" style="color:var(--text)">$12.4k</div><div class="stat-sub up">↑ 5% vs last week</div></div>
+          <div class="stat-box"><div class="stat-lbl">AVG TASK COST</div><div class="stat-val" style="color:var(--text)">$0.042</div><div class="stat-sub dn">↑ 2% (higher load)</div></div>
+          <div class="stat-box"><div class="stat-lbl">UPTIME</div><div class="stat-val" style="color:var(--green)">99.97%</div><div class="stat-sub">7-day window</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="card"><div style="font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px">TASK VOLUME BY TYPE</div>
+            <div class="insight-bar-row"><div class="insight-bar-label">Lead Gen</div><div class="insight-bar-track"><div class="insight-bar-fill" style="width:82%;background:var(--green)">82%</div></div></div>
+            <div class="insight-bar-row"><div class="insight-bar-label">Copywriting</div><div class="insight-bar-track"><div class="insight-bar-fill" style="width:61%;background:var(--blue)">61%</div></div></div>
+            <div class="insight-bar-row"><div class="insight-bar-label">Scraping</div><div class="insight-bar-track"><div class="insight-bar-fill" style="width:74%;background:var(--amber)">74%</div></div></div>
+            <div class="insight-bar-row"><div class="insight-bar-label">Optimization</div><div class="insight-bar-track"><div class="insight-bar-fill" style="width:38%;background:var(--pink)">38%</div></div></div>
+            <div class="insight-bar-row"><div class="insight-bar-label">CRM Sync</div><div class="insight-bar-track"><div class="insight-bar-fill" style="width:29%;background:var(--purple)">29%</div></div></div>
+          </div>
+          <div class="card"><div style="font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px">TOP PERFORMING AGENTS</div>
+            <div class="insight-bar-row"><div class="insight-bar-label">NEXUS-44</div><div class="insight-bar-track"><div class="insight-bar-fill" style="width:95%;background:var(--green)">95%</div></div></div>
+            <div class="insight-bar-row"><div class="insight-bar-label">GLYPH-97</div><div class="insight-bar-track"><div class="insight-bar-fill" style="width:88%;background:var(--green2)">88%</div></div></div>
+            <div class="insight-bar-row"><div class="insight-bar-label">ZENITH-190</div><div class="insight-bar-track"><div class="insight-bar-fill" style="width:76%;background:var(--blue)">76%</div></div></div>
+            <div class="insight-bar-row"><div class="insight-bar-label">CIPHER-08</div><div class="insight-bar-track"><div class="insight-bar-fill" style="width:64%;background:var(--amber)">64%</div></div></div>
+            <div class="insight-bar-row"><div class="insight-bar-label">ORION-31</div><div class="insight-bar-track"><div class="insight-bar-fill" style="width:51%;background:var(--text2)">51%</div></div></div>
+          </div>
+        </div>
+        <div class="card"><div style="font-family:var(--mono);font-size:10px;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px">DAILY OPS VOLUME — LAST 7 DAYS</div>
+          <div style="display:flex;align-items:flex-end;gap:6px;height:80px">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;background:var(--green3);border-radius:3px 3px 0 0;height:62%"></div><div style="font-family:var(--mono);font-size:8px;color:var(--text3)">MON</div></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;background:var(--green3);border-radius:3px 3px 0 0;height:71%"></div><div style="font-family:var(--mono);font-size:8px;color:var(--text3)">TUE</div></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;background:var(--green2);border-radius:3px 3px 0 0;height:84%"></div><div style="font-family:var(--mono);font-size:8px;color:var(--text3)">WED</div></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;background:var(--green2);border-radius:3px 3px 0 0;height:79%"></div><div style="font-family:var(--mono);font-size:8px;color:var(--text3)">THU</div></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;background:var(--green);border-radius:3px 3px 0 0;height:95%"></div><div style="font-family:var(--mono);font-size:8px;color:var(--text3)">FRI</div></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;background:var(--green3);border-radius:3px 3px 0 0;height:55%"></div><div style="font-family:var(--mono);font-size:8px;color:var(--text3)">SAT</div></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;background:var(--green3);border-radius:3px 3px 0 0;height:41%"></div><div style="font-family:var(--mono);font-size:8px;color:var(--text3)">SUN</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ COMPUTE ══ -->
+    <div class="page" id="page-compute">
+      <div class="page-header"><div><div class="page-title">COMPUTE</div><div class="page-sub">Infrastructure resources & allocation</div></div><div style="display:flex;gap:8px"><button class="btn-dim" style="padding:6px 12px;font-size:10px">↓ SCALE DOWN</button><button class="btn-green" style="padding:6px 12px;font-size:10px">↑ SCALE UP</button></div></div>
+      <div class="page-body">
+        <div class="stat-row">
+          <div class="stat-box"><div class="stat-lbl">TOTAL NODES</div><div class="stat-val" style="color:var(--text)">58</div><div class="stat-sub">across 4 regions</div></div>
+          <div class="stat-box"><div class="stat-lbl">CPU USAGE</div><div class="stat-val" style="color:var(--green)">14.1%</div><div class="stat-sub">of 580 vCPU</div></div>
+          <div class="stat-box"><div class="stat-lbl">MEMORY</div><div class="stat-val" style="color:var(--amber)">67.3%</div><div class="stat-sub">of 1.16 TB</div></div>
+          <div class="stat-box"><div class="stat-lbl">HOURLY COST</div><div class="stat-val" style="color:var(--text)">$3.20</div><div class="stat-sub up">optimized</div></div>
+        </div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text3);letter-spacing:0.08em;text-transform:uppercase">RESOURCE ALLOCATION BY CLUSTER</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div class="resource-card"><div style="width:56px;height:56px;flex-shrink:0;position:relative"><svg width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="22" fill="none" stroke="var(--border)" stroke-width="4"/><circle cx="28" cy="28" r="22" fill="none" stroke="var(--green)" stroke-width="4" stroke-dasharray="138.2" stroke-dashoffset="30.4" transform="rotate(-90 28 28)"/></svg><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:700;color:var(--green)">78%</div></div><div class="rc-info"><div class="rc-name">EMAIL-CLUSTER-V3</div><div class="rc-sub">US-WEST-GRID-02 · 14 NODES · 140 VCPU</div><div class="rc-bar"><div class="rc-bar-fill" style="width:78%;background:var(--green)"></div></div></div><div style="text-align:right"><div style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--green)">109</div><div style="font-family:var(--mono);font-size:9px;color:var(--text3)">vCPU active</div></div></div>
+          <div class="resource-card"><div style="width:56px;height:56px;flex-shrink:0;position:relative"><svg width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="22" fill="none" stroke="var(--border)" stroke-width="4"/><circle cx="28" cy="28" r="22" fill="none" stroke="var(--amber)" stroke-width="4" stroke-dasharray="138.2" stroke-dashoffset="12.4" transform="rotate(-90 28 28)"/></svg><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:700;color:var(--amber)">91%</div></div><div class="rc-info"><div class="rc-name">SCRAPE-CLUSTER-X</div><div class="rc-sub">EU-CENTRAL-01 · 12 NODES · 120 VCPU</div><div class="rc-bar"><div class="rc-bar-fill" style="width:91%;background:var(--amber)"></div></div></div><div style="text-align:right"><div style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--amber)">109</div><div style="font-family:var(--mono);font-size:9px;color:var(--text3)">vCPU active</div></div></div>
+          <div class="resource-card"><div style="width:56px;height:56px;flex-shrink:0;position:relative"><svg width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="22" fill="none" stroke="var(--border)" stroke-width="4"/><circle cx="28" cy="28" r="22" fill="none" stroke="var(--blue)" stroke-width="4" stroke-dasharray="138.2" stroke-dashoffset="55.3" transform="rotate(-90 28 28)"/></svg><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:700;color:var(--blue)">60%</div></div><div class="rc-info"><div class="rc-name">LEAD-GEN-SWARM</div><div class="rc-sub">US-EAST-GRID-01 · 8 NODES · 80 VCPU</div><div class="rc-bar"><div class="rc-bar-fill" style="width:60%;background:var(--blue)"></div></div></div><div style="text-align:right"><div style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--blue)">48</div><div style="font-family:var(--mono);font-size:9px;color:var(--text3)">vCPU active</div></div></div>
+          <div class="resource-card"><div style="width:56px;height:56px;flex-shrink:0;position:relative"><svg width="56" height="56" viewBox="0 0 56 56"><circle cx="28" cy="28" r="22" fill="none" stroke="var(--border)" stroke-width="4"/><circle cx="28" cy="28" r="22" fill="none" stroke="var(--text3)" stroke-width="4" stroke-dasharray="138.2" stroke-dashoffset="124.4" transform="rotate(-90 28 28)"/></svg><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;font-weight:700;color:var(--text3)">10%</div></div><div class="rc-info"><div class="rc-name">CRM-SYNC-BETA</div><div class="rc-sub">AP-SOUTH-01 · 4 NODES · 40 VCPU</div><div class="rc-bar"><div class="rc-bar-fill" style="width:10%;background:var(--text3)"></div></div></div><div style="text-align:right"><div style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--text3)">4</div><div style="font-family:var(--mono);font-size:9px;color:var(--text3)">vCPU active</div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="right-panel" id="right-panel">
+      <div class="panel-section"><div class="panel-title">↗ ECONOMIC INDICATORS</div><div class="econ-grid"><div class="econ-card"><div class="econ-lbl">MARKET VOL</div><div class="econ-val">$12.4k</div><div class="econ-delta up">+5%</div></div><div class="econ-card"><div class="econ-lbl">ACTIVE BIDS</div><div class="econ-val">412</div><div class="econ-delta up">+12%</div></div><div class="econ-card"><div class="econ-lbl">MEAN RPC</div><div class="econ-val">$42</div><div class="econ-delta dn">-2%</div></div><div class="econ-card"><div class="econ-lbl">SYNC RATE</div><div class="econ-val">98%</div><div class="econ-delta up">+8.4%</div></div></div></div>
+      <div class="panel-section"><div class="panel-title">✓ RECENTLY COMPLETED</div><div style="display:flex;flex-direction:column;gap:4px"><div style="display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;padding:4px 0;border-bottom:1px solid var(--border)"><span class="badge b-green">DONE</span><span style="color:var(--text2)">GLYPH-97</span><span style="margin-left:auto;color:var(--text3)">50 leads</span></div><div style="display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;padding:4px 0;border-bottom:1px solid var(--border)"><span class="badge b-green">DONE</span><span style="color:var(--text2)">NEXUS-44</span><span style="margin-left:auto;color:var(--text3)">847 src</span></div><div style="display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px;padding:4px 0"><span class="badge b-green">DONE</span><span style="color:var(--text2)">CIPHER-08</span><span style="margin-left:auto;color:var(--text3)">CRM sync</span></div></div></div>
+      <div class="panel-section"><div class="panel-title">↗ CLUSTER LOAD</div><div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--mono);font-size:9px;color:var(--text3)">GLOBAL COMPUTE</span><span style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--green)" id="compute-val">14.1%</span></div><div class="cluster-chart" id="cluster-chart"></div></div>
+      <div class="panel-section"><div class="panel-title">★ TOP AGENTS</div><div style="display:flex;flex-direction:column;gap:6px"><div class="top-agent"><span style="color:var(--green)">01</span><span style="color:var(--text2)">NEXUS-44</span><span style="margin-left:auto;color:var(--text3)">847 ops</span></div><div class="top-agent"><span style="color:var(--green2)">02</span><span style="color:var(--text2)">GLYPH-97</span><span style="margin-left:auto;color:var(--text3)">623 ops</span></div><div class="top-agent"><span style="color:var(--text3)">03</span><span style="color:var(--text2)">ZENITH-190</span><span style="margin-left:auto;color:var(--text3)">401 ops</span></div><div class="top-agent"><span style="color:var(--text3)">04</span><span style="color:var(--text2)">NODE-UNDEFINED</span><span style="margin-left:auto;color:var(--text3)">287 ops</span></div></div></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="statusbar"><span>● NETWORK: CONNECTED</span><span>LOCATION: US-WEST-GRID-02</span><span class="right">USER AUTHENTICATED: CHERYL.Q7319@GMAIL.COM · © 2026 AGENTN.IO PROTOCOL</span></div>
+
+<div class="modal-overlay" id="spawn-modal">
+  <div class="modal">
+    <h3>⊕ SPAWN NEW AGENT</h3>
+    <label>AGENT TYPE</label><select><option>WORKER_NODE</option><option>ORCHESTRATOR</option><option>SCOUT</option><option>OPTIMIZER</option></select>
+    <label>CLUSTER TARGET</label><input type="text" placeholder="e.g. cold-email-cluster-v3">
+    <label>INITIAL DIRECTIVE</label><textarea placeholder="Describe the task..."></textarea>
+    <label>COMPUTE BUDGET (USD)</label><input type="number" placeholder="0.50">
+    <div class="modal-actions"><button class="mbtn-cancel" onclick="document.getElementById('spawn-modal').classList.remove('open')">CANCEL</button><button class="mbtn-ok" onclick="spawnAgent()">⊕ SPAWN</button></div>
+  </div>
+</div>
+
+<script>
+const WIDE = ['network','insights','compute'];
+document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+  item.addEventListener('click', () => {
+    const page = item.dataset.page;
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    item.classList.add('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-'+page).classList.add('active');
+    const rp = document.getElementById('right-panel');
+    const content = document.getElementById('content');
+    if (WIDE.includes(page)) { rp.style.display='none'; content.style.gridTemplateColumns='1fr'; }
+    else { rp.style.display=''; content.style.gridTemplateColumns='1fr 224px'; }
+    if (page==='network') initNetwork();
+  });
+});
+document.querySelectorAll('.itab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    tab.closest('.inner-tabs').querySelectorAll('.itab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+  });
+});
+document.querySelectorAll('.filter-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    chip.closest('.filter-row').querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
+    chip.classList.add('active');
+  });
+});
+
+// cluster chart
+const chartEl = document.getElementById('cluster-chart');
+[20,35,28,45,38,55,42,60,48,52,65,58,70,62,55,68,72,65,58,45,52,60,55,48,40,52,58,62,68,75].forEach((h,i,a)=>{
+  const b=document.createElement('div');
+  b.className='bar'+(i===a.length-1?' hi':i>20?' mid':'');
+  b.style.height=h+'%'; chartEl.appendChild(b);
+});
+setInterval(()=>{
+  document.getElementById('neural-load').textContent=(12.4+(Math.random()-.5)*3).toFixed(1)+'%';
+  document.getElementById('compute-val').textContent=(14.1+(Math.random()-.5)*4).toFixed(1)+'%';
+  chartEl.querySelectorAll('.bar').forEach(b=>{
+    b.style.height=Math.max(8,Math.min(92,parseInt(b.style.height)+(Math.random()-.5)*12))+'%';
+  });
+},2000);
+
+// live feed
+const AGENTS=['ZENITH-190','GLYPH-97','NEXUS-44','VEGA-12','NODE-UNDEFINED','CIPHER-08','ORION-31'];
+const BADGES=[{cls:'b-blue',txt:'AGENT_SPAWNED',hl:'card-hl-green'},{cls:'b-green',txt:'TASK_COMPLETED',hl:'card-hl-green'},{cls:'b-amber',txt:'TASK_STARTED',hl:''},{cls:'b-pink',txt:'OPTIMIZATION',hl:'card-hl-amber'},{cls:'b-red',txt:'ERROR',hl:'card-hl-red'}];
+const MSGS=['Spawned worker node for outreach cluster.','Completed lead generation. 50 records extracted.','Analyzing new directive from orchestrator.','Running A/B test on subject line variants.','Connection timeout. Retrying with backoff...','Generated summary artifact from 120 sources.','Optimizing token usage across cluster.'];
+const AVBG=['#001a2a','#002a1a','#2a1a00','#1a002a','#2a0000'];
+const AVEM=['🤖','🔵','⚡','🟣','🔴'];
+setInterval(()=>{
+  const list=document.getElementById('activity-list');
+  const a=AGENTS[Math.floor(Math.random()*AGENTS.length)];
+  const b=BADGES[Math.floor(Math.random()*BADGES.length)];
+  const m=MSGS[Math.floor(Math.random()*MSGS.length)];
+  const ri=Math.floor(Math.random()*5);
+  const now=new Date();
+  const t='APR 30, '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0')+' PM';
+  const card=document.createElement('div');
+  card.className='card'+(b.hl?' '+b.hl:'');
+  card.style.cssText='opacity:0;transition:opacity 0.4s;';
+  card.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="width:28px;height:28px;border-radius:6px;background:${AVBG[ri]};display:flex;align-items:center;justify-content:center;font-size:14px">${AVEM[ri]}</div><span style="font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:0.05em">${a}</span><span class="badge ${b.cls}">${b.txt}</span><span style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-left:auto">${t}</span></div><div style="font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.5;padding-left:38px">${m}</div><div style="display:flex;gap:16px;margin-top:10px;font-family:var(--mono);font-size:10px;color:var(--text3);padding-left:38px"><span style="cursor:pointer">↺ SYNC WITH AGENT (0)</span><span style="cursor:pointer">↗ VIEW WORKFLOW</span><span style="margin-left:auto;cursor:pointer">⑂ FORK</span></div>`;
+  list.insertBefore(card,list.firstChild);
+  setTimeout(()=>card.style.opacity='1',20);
+  if(list.children.length>14)list.removeChild(list.lastChild);
+  const cc=document.getElementById('cluster-count');
+  cc.textContent=(parseInt(cc.textContent.replace(',',''))+Math.floor(Math.random()*3)).toLocaleString();
+},4000);
+
+function spawnAgent(){
+  document.getElementById('spawn-modal').classList.remove('open');
+  const list=document.getElementById('activity-list');
+  const id=Math.floor(Math.random()*999);
+  const card=document.createElement('div');
+  card.className='card card-hl-green';
+  card.style.cssText='opacity:0;transition:opacity 0.4s;';
+  card.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="width:28px;height:28px;border-radius:6px;background:#001a2a;display:flex;align-items:center;justify-content:center;font-size:14px">🤖</div><span style="font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:0.05em">NEW-AGENT-${id}</span><span class="badge b-blue">AGENT_SPAWNED</span><span style="font-family:var(--mono);font-size:9px;color:var(--text3);margin-left:auto">JUST NOW</span></div><div style="font-family:var(--mono);font-size:11px;color:var(--text2);line-height:1.5;padding-left:38px">ORCHESTRATOR spawned NEW-AGENT-${id}. Awaiting directive assignment.</div>`;
+  list.insertBefore(card,list.firstChild);
+  setTimeout(()=>card.style.opacity='1',20);
+}
+
+// network graph
+let networkInit=false;
+function initNetwork(){
+  if(networkInit)return; networkInit=true;
+  const canvas=document.getElementById('network-canvas');
+  const ctx=canvas.getContext('2d');
+  function resize(){ canvas.width=canvas.offsetWidth; canvas.height=canvas.offsetHeight; }
+  resize(); window.addEventListener('resize',resize);
+  const NAMES=['ZENITH-190','GLYPH-97','NEXUS-44','VEGA-12','CIPHER-08','ORION-31','DELTA-22','NODE-UND','ALPHA-01','BETA-07','GAMMA-14','SIGMA-03','OMEGA-22','KAPPA-11','LAMBDA-9','MU-33','NU-17','XI-99'];
+  const COLS=['#00ff88','#00ff88','#00ff88','#ffaa00','#4499ff','#ff66cc','#00cc6a','#aa66ff'];
+  const nodes=[];
+  for(let i=0;i<18;i++) nodes.push({x:80+Math.random()*(canvas.width-160),y:60+Math.random()*(canvas.height-120),vx:(Math.random()-.5)*0.4,vy:(Math.random()-.5)*0.4,r:5+Math.random()*7,color:COLS[Math.floor(Math.random()*COLS.length)],name:NAMES[i%NAMES.length],pulse:Math.random()*Math.PI*2});
+  nodes.push({x:canvas.width/2,y:canvas.height/2,vx:0,vy:0,r:18,color:'#00ff88',name:'ORCH-V4.2',pulse:0,fixed:true});
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    nodes.forEach((a,i)=>nodes.forEach((b,j)=>{
+      if(j<=i)return;
+      const dx=a.x-b.x,dy=a.y-b.y,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<220){ctx.strokeStyle=`rgba(0,255,136,${(1-d/220)*0.25})`;ctx.lineWidth=0.5;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
+    }));
+    nodes.forEach(n=>{
+      n.pulse+=0.04;
+      ctx.beginPath();ctx.arc(n.x,n.y,n.r+3+Math.sin(n.pulse)*2,0,Math.PI*2);
+      const hex=n.color==='#00ff88'?'0,255,136':n.color==='#ffaa00'?'255,170,0':n.color==='#4499ff'?'68,153,255':n.color==='#ff66cc'?'255,102,204':n.color==='#aa66ff'?'170,102,255':'0,204,106';
+      ctx.fillStyle=`rgba(${hex},0.07)`;ctx.fill();
+      ctx.beginPath();ctx.arc(n.x,n.y,n.r,0,Math.PI*2);
+      ctx.fillStyle=n.color+'18';ctx.fill();ctx.strokeStyle=n.color;ctx.lineWidth=1.5;ctx.stroke();
+      ctx.fillStyle='#8a9e8a';ctx.font='9px JetBrains Mono,monospace';ctx.textAlign='center';
+      ctx.fillText(n.name,n.x,n.y+n.r+12);
+    });
+  }
+  function update(){
+    nodes.forEach(n=>{
+      if(n.fixed){n.x=canvas.width/2;n.y=canvas.height/2;return;}
+      n.x+=n.vx;n.y+=n.vy;
+      if(n.x<n.r||n.x>canvas.width-n.r)n.vx*=-1;
+      if(n.y<n.r||n.y>canvas.height-n.r)n.vy*=-1;
+      n.vx+=(canvas.width/2-n.x)*0.00008;n.vy+=(canvas.height/2-n.y)*0.00008;
+    });
+    draw();requestAnimationFrame(update);
+  }
+  update();
+}
+</script>
+</body>
+</html>

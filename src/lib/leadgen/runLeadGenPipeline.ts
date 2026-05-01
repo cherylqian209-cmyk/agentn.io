@@ -6,6 +6,7 @@ import { enrichLead } from './enrichLead';
 import { generateOutreach } from './generateOutreach';
 import { scoreLead } from './scoreLead';
 import { LeadArtifact, LeadGenICP, LeadProof, LeadRecord } from './types';
+import { normalizeGeneratedItems } from '@/lib/generatedItems';
 
 const blockedHosts = ['localhost', '127.0.0.1', '0.0.0.0', '169.254.169.254'];
 
@@ -97,15 +98,18 @@ export async function runLeadGenPipeline(input: Partial<LeadGenICP>, hasSearchKe
   }
 
   const qualified = leads.filter(l => l.scoreGrade !== 'Reject');
+  const generated = normalizeGeneratedItems(leads as unknown as Record<string, unknown>[], icp.desiredCount);
+
   const artifact: LeadArtifact = {
     type: 'lead_generation',
     icp,
-    leads,
+    leads: generated.items as LeadRecord[],
+    generated,
     summary: {
       requested: icp.desiredCount,
-      found: leads.length,
+      found: generated.generatedCount,
       qualified: qualified.length,
-      averageFitScore: leads.length ? Number((leads.reduce((a, b) => a + b.fitScore, 0) / leads.length).toFixed(1)) : 0,
+      averageFitScore: generated.generatedCount ? Number(((generated.items as LeadRecord[]).reduce((a, b) => a + (b.fitScore ?? 0), 0) / generated.generatedCount).toFixed(1)) : 0,
       sourcesUsed: validSources.length,
     },
   };
@@ -113,7 +117,7 @@ export async function runLeadGenPipeline(input: Partial<LeadGenICP>, hasSearchKe
     sourceUrls: validSources,
     successfulFetchCount,
     failedFetchCount,
-    leadsFound: leads.length,
+    leadsFound: generated.generatedCount,
     qualifiedLeads: qualified.length,
     validationChecks: ['safe-url-validation', 'dedupe', 'scoring-rubric', 'source-evidence-attached', sampleMode ? 'sample-mode-labeled' : 'live-mode'],
     proofHash: crypto.createHash('sha256').update(JSON.stringify(artifact)).digest('hex').slice(0, 24),

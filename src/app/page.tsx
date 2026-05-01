@@ -2,6 +2,9 @@
 
 import { useEffect, useRef } from 'react'
 
+const SOLO_STRIPE_URL = 'https://buy.stripe.com/14AcN6bli0WfayWgOy8g004'
+const SWARM_STRIPE_URL = 'https://buy.stripe.com/28E4gA89634n6iG2XI8g005'
+
 export default function RootPage() {
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
 
@@ -42,7 +45,48 @@ export default function RootPage() {
   }, [])
 
   return (
-    <main style={{ width: '100vw', height: '100vh', overflow: 'hidden' }}>
+    <main style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
+      <div
+        style={{
+          position: 'fixed',
+          top: 16,
+          right: 16,
+          display: 'flex',
+          gap: 8,
+          zIndex: 20,
+        }}
+      >
+        <a
+          href={SOLO_STRIPE_URL}
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            background: '#4ef08a',
+            color: '#0a0d0c',
+            fontWeight: 700,
+            padding: '8px 12px',
+            textDecoration: 'none',
+            borderRadius: 6,
+          }}
+        >
+          Buy Agentn Solo
+        </a>
+        <a
+          href={SWARM_STRIPE_URL}
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            background: '#d8e6df',
+            color: '#0a0d0c',
+            fontWeight: 700,
+            padding: '8px 12px',
+            textDecoration: 'none',
+            borderRadius: 6,
+          }}
+        >
+          Buy Agentn Swarm
+        </a>
+      </div>
       <iframe
         ref={iframeRef}
         src="/landing.html"

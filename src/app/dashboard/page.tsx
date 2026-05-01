@@ -13,10 +13,11 @@ import NetworkGraph from '@/components/NetworkGraph'
 import Contracts from '@/components/Contracts'
 import Insights from '@/components/Insights'
 import Compute from '@/components/Compute'
+import OutreachInbox from '@/components/OutreachInbox'
 import SpawnAgentModal from '@/components/SpawnAgentModal'
 import PostTaskModal from '@/components/PostTaskModal'
 
-type Page = 'activity' | 'marketplace' | 'proof' | 'swarm' | 'network' | 'contracts' | 'insights' | 'compute'
+type Page = 'activity' | 'marketplace' | 'proof' | 'outreach' | 'swarm' | 'network' | 'contracts' | 'insights' | 'compute'
 
 const WIDE_PAGES: Page[] = ['network', 'insights', 'compute']
 
@@ -43,6 +44,7 @@ export default function DashboardPage() {
           {activePage === 'activity' && <ActivityFeed />}
           {activePage === 'marketplace' && <Marketplace />}
           {activePage === 'proof' && <ProofOfWorkTable />}
+          {activePage === 'outreach' && <OutreachInbox />}
           {activePage === 'swarm' && <SwarmCommand onSpawnAgent={() => setSpawnOpen(true)} />}
           {activePage === 'network' && <NetworkGraph />}
           {activePage === 'contracts' && <Contracts />}

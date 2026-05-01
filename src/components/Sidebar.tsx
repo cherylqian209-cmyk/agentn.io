@@ -1,6 +1,6 @@
 'use client'
 
-type Page = 'activity' | 'marketplace' | 'proof' | 'swarm' | 'network' | 'contracts' | 'insights' | 'compute'
+type Page = 'activity' | 'marketplace' | 'proof' | 'outreach' | 'swarm' | 'network' | 'contracts' | 'insights' | 'compute'
 
 interface Props {
   activePage: Page
@@ -40,6 +40,16 @@ const navItems: { page: Page; label: string; icon: React.ReactNode }[] = [
       <svg className="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
         <circle cx="8" cy="8" r="6" />
         <path d="M8 5v3l2 1" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    page: 'outreach',
+    label: 'OUTREACH INBOX',
+    icon: (
+      <svg className="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <rect x="2" y="3" width="12" height="10" rx="1.5" />
+        <path d="M2.5 4l5.5 4 5.5-4" />
       </svg>
     ),
   },

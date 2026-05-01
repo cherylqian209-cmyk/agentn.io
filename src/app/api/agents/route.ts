@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
+import { enforceLimit, getRequestPlan, paywallError } from '@/lib/billing/serverPaywall'
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -26,6 +27,9 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
+  const plan = getRequestPlan(req)
+  const activeAgents = await prisma.agent.count({ where: { userId: session.user.id, status: 'ACTIVE' } })
+  if (!enforceLimit(plan, 'maxActiveAgents', activeAgents)) return paywallError('activeAgents')
   const { type, cluster, directive, budget } = body
 
   if (!type || !cluster || !directive) {

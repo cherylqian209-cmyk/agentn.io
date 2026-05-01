@@ -18,6 +18,7 @@ import OutreachInbox from '@/components/OutreachInbox'
 import Forecast from '@/components/Forecast'
 import SpawnAgentModal from '@/components/SpawnAgentModal'
 import PostTaskModal from '@/components/PostTaskModal'
+import PaywallModal from '@/components/PaywallModal'
 
 type Page = 'activity' | 'marketplace' | 'data' | 'proof' | 'outreach' | 'swarm' | 'network' | 'contracts' | 'insights' | 'compute' | 'forecast'
 
@@ -72,6 +73,8 @@ export default function DashboardPage() {
           console.log('Agent spawned:', agent)
         }}
       />
+
+      <PaywallModal />
 
       <PostTaskModal
         open={postTaskOpen}

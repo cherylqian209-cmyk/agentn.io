@@ -6,23 +6,35 @@ export const dynamic = 'force-dynamic'
 import { prisma } from '@/lib/prisma'
 
 export async function GET() {
-  const session = await getServerSession(authOptions)
+  let session
+  try {
+    session = await getServerSession(authOptions)
+  } catch {
+    return NextResponse.json([])
+  }
+
   if (!session?.user?.id) {
     return NextResponse.json([])
   }
 
-  const [agents, tasks] = await Promise.all([
-    prisma.agent.findMany({
-      where: { userId: session.user.id },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-    }),
-    prisma.task.findMany({
-      where: { userId: session.user.id },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-    }),
-  ])
+  let agents
+  let tasks
+  try {
+    ;[agents, tasks] = await Promise.all([
+      prisma.agent.findMany({
+        where: { userId: session.user.id },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }),
+      prisma.task.findMany({
+        where: { userId: session.user.id },
+        orderBy: { createdAt: 'desc' },
+        take: 10,
+      }),
+    ])
+  } catch {
+    return NextResponse.json([])
+  }
 
   const agentItems = agents.map(a => ({
     id: `agent-${a.id}`,

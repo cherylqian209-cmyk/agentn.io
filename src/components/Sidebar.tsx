@@ -1,6 +1,6 @@
 'use client'
 
-type Page = 'activity' | 'marketplace' | 'proof' | 'outreach' | 'swarm' | 'network' | 'contracts' | 'insights' | 'compute'
+type Page = 'activity' | 'marketplace' | 'data' | 'proof' | 'outreach' | 'swarm' | 'network' | 'contracts' | 'insights' | 'compute'
 
 interface Props {
   activePage: Page

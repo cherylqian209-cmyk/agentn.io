@@ -18,7 +18,7 @@ import OutreachInbox from '@/components/OutreachInbox'
 import SpawnAgentModal from '@/components/SpawnAgentModal'
 import PostTaskModal from '@/components/PostTaskModal'
 
-type Page = 'activity' | 'marketplace' | 'proof' | 'outreach' | 'swarm' | 'network' | 'contracts' | 'insights' | 'compute'
+type Page = 'activity' | 'marketplace' | 'data' | 'proof' | 'outreach' | 'swarm' | 'network' | 'contracts' | 'insights' | 'compute'
 
 const WIDE_PAGES: Page[] = ['network', 'insights', 'compute']
 

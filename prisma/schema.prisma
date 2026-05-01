@@ -1,0 +1,130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String           @id @default(cuid())
+  name          String?
+  email         String?          @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  agents        Agent[]
+  tasks         Task[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+}
+
+model Agent {
+  id        String     @id @default(cuid())
+  name      String
+  type      String     // WORKER_NODE | ORCHESTRATOR | SCOUT | OPTIMIZER
+  cluster   String
+  directive String
+  budget    Float
+  status    String     @default("ACTIVE") // ACTIVE | IDLE | TERMINATED
+  userId    String
+  user      User       @relation(fields: [userId], references: [id])
+  taskRuns  TaskRun[]
+  proofLogs ProofLog[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Task {
+  id             String     @id @default(cuid())
+  goal           String
+  targetCustomer String?
+  desiredOutput  String?
+  budget         Float      @default(0)
+  status         String     @default("PENDING") // PENDING | RUNNING | COMPLETED | FAILED
+  userId         String
+  user           User       @relation(fields: [userId], references: [id])
+  taskRuns       TaskRun[]
+  artifacts      Artifact[]
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+model TaskRun {
+  id          String     @id @default(cuid())
+  taskId      String
+  agentId     String?
+  status      String     @default("PENDING") // PENDING | RUNNING | COMPLETED | FAILED
+  startedAt   DateTime?
+  completedAt DateTime?
+  durationMs  Int?
+  task        Task       @relation(fields: [taskId], references: [id])
+  agent       Agent?     @relation(fields: [agentId], references: [id])
+  artifacts   Artifact[]
+  proofLogs   ProofLog[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Artifact {
+  id        String   @id @default(cuid())
+  taskId    String
+  taskRunId String
+  type      String   @default("TEXT") // TEXT | JSON | CSV
+  content   String   @db.Text
+  task      Task     @relation(fields: [taskId], references: [id])
+  taskRun   TaskRun  @relation(fields: [taskRunId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model ProofLog {
+  id            String   @id @default(cuid())
+  taskRunId     String
+  agentId       String?
+  model         String
+  durationMs    Int
+  estimatedCost Float
+  status        String   // VERIFIED | PENDING | FAILED
+  inputHash     String
+  outputHash    String
+  taskRun       TaskRun  @relation(fields: [taskRunId], references: [id])
+  agent         Agent?   @relation(fields: [agentId], references: [id])
+  createdAt     DateTime @default(now())
+}
+
+// NextAuth required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}

@@ -26,11 +26,28 @@ const seedOutreachThreads: OutreachThread[] = [
   { id:'OT-1003', leadName:'Elle Rivera', email:'elle@nova-labs.ai', subject:'Can AgentN reduce outreach ops overhead?', body:'Reply received.', status:'replied', classification:'Interested', updatedAt:new Date().toISOString() },
 ]
 
+const defaultOutreach = { gmailConnected: false, mode: 'live', threads: seedOutreachThreads }
+const defaultState = { agents: seedAgents, tasks: [], activityEvents: [], proofRecords: [], contracts: [], activeTaskId: null, selectedAgentId: null, toast: '', outreach: defaultOutreach }
+
 const Ctx = createContext<any>(null)
 
 export function MvpProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<any>({ agents: seedAgents, tasks: [], activityEvents: [], proofRecords: [], contracts: [], activeTaskId: null, selectedAgentId: null, toast: '', outreach: { gmailConnected: false, mode: 'live', threads: seedOutreachThreads } })
-  useEffect(() => { const raw = localStorage.getItem('agentn-mvp'); if (raw) setState(JSON.parse(raw)) }, [])
+  const [state, setState] = useState<any>(defaultState)
+  useEffect(() => {
+    const raw = localStorage.getItem('agentn-mvp')
+    if (!raw) return
+
+    const parsed = JSON.parse(raw)
+    setState({
+      ...defaultState,
+      ...parsed,
+      outreach: {
+        ...defaultOutreach,
+        ...(parsed?.outreach ?? {}),
+        threads: parsed?.outreach?.threads ?? defaultOutreach.threads,
+      },
+    })
+  }, [])
   useEffect(() => { localStorage.setItem('agentn-mvp', JSON.stringify(state)) }, [state])
 
   const api = useMemo(() => ({

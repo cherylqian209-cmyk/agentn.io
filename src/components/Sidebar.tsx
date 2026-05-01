@@ -34,6 +34,16 @@ const navItems: { page: Page; label: string; icon: React.ReactNode }[] = [
     ),
   },
   {
+    page: 'data',
+    label: 'DATA LAB',
+    icon: (
+      <svg className="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <rect x="2" y="2" width="12" height="12" rx="2" />
+        <path d="M5 6h6M5 8h6M5 10h4" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
     page: 'proof',
     label: 'PROOF OF WORK',
     icon: (

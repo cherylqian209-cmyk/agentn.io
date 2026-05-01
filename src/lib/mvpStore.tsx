@@ -2,12 +2,12 @@
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 
-export type TaskType = 'Lead Generation' | 'Cold Outreach' | 'Market Research' | 'Copywriting' | 'Data Scraping' | 'CRM Sync' | 'Optimization'
+export type TaskType = 'Lead Generation' | 'Cold Outreach' | 'Market Research' | 'Copywriting' | 'Data Scraping' | 'CRM Sync' | 'Optimization' | 'Data Lab'
 export type OutputFormat = 'Table' | 'Summary' | 'CSV' | 'JSON' | 'Email Drafts' | 'Research Brief'
 export type Recurrence = 'one-time' | 'daily' | 'weekly' | 'monthly'
 
 type Agent = { id: string; name: string; description: string; category: string; pricePerRun: number; rating: number; status: 'verified'|'popular'|'new'|'beta'; tags: string[]; runs: number }
-type Task = { id: string; title: string; desiredOutcome: string; type: TaskType; priority: 'low'|'normal'|'high'|'critical'; budgetLimit:number; runtimeLimit:number; outputFormat: OutputFormat; recurrence: Recurrence; status: 'queued'|'routing'|'running'|'validating'|'completed'|'failed'|'disputed'; progress:number; agents: Agent[]; estimatedCost:number; actualCost?:number; estimatedRuntime:string; startedAt?:string; completedAt?:string; proofHash?:string; logs:string[]; artifact?: Record<string, unknown>[] }
+type Task = { id: string; title: string; desiredOutcome: string; type: TaskType; priority: 'low'|'normal'|'high'|'critical'; budgetLimit:number; runtimeLimit:number; outputFormat: OutputFormat; recurrence: Recurrence; status: 'queued'|'routing'|'running'|'validating'|'completed'|'failed'|'disputed'; progress:number; agents: Agent[]; estimatedCost:number; actualCost?:number; estimatedRuntime:string; startedAt?:string; completedAt?:string; proofHash?:string; logs:string[]; artifact?: any; leadICP?: any }
 type ActivityEvent = { id:string; type:string; title:string; description:string; timestamp:string; agentName?:string; taskId?:string; status:'success'|'running'|'warning'|'error'|'info'; taskType?: string }
 type Contract = { id:string; client:string; agentName:string; taskTitle:string; recurrence:'daily'|'weekly'|'monthly'; monthlyValue:number; sla:number; nextRunDate:string; status:'active'|'expiring'|'at-risk'|'terminated'; createdFromTaskId?:string }
 type Proof = { id:string; taskId:string; agentName:string; type:TaskType; duration:string; cost:number; status:'verified'|'pending'|'failed'|'disputed'; hash:string; logs:string[]; artifact?: Record<string, unknown>[] }
@@ -46,10 +46,19 @@ export function MvpProvider({ children }: { children: React.ReactNode }) {
     queueFollowUp: (threadId:string) => setState((s:any)=>{ const thread=s.outreach.threads.find((t:OutreachThread)=>t.id===threadId); return { ...s, proofRecords:[{ id:`POW-OUT-${Date.now().toString().slice(-5)}`, taskId:`FU-${threadId}`, agentName:'Copywriter-GPT-4X', type:'Cold Outreach', duration:'16s', cost:0.04, status:'verified', hash:`0x${Math.random().toString(16).slice(2,18)}`, logs:['Reply classified by agent.','Follow-up drafted and queued for approval.'], artifact:[{ threadId, classification: thread?.classification, action:'follow-up drafted' }] }, ...s.proofRecords], activityEvents:[{ id: crypto.randomUUID(), type:'FOLLOW_UP_DRAFTED', title:'Follow-up drafted', description:`Agent drafted follow-up for ${thread?.leadName ?? threadId}`, timestamp:new Date().toISOString(), status:'running', taskType:'Cold Outreach' }, ...s.activityEvents], toast:'Follow-up draft ready' } }),
     runTask: (draft:any, agents:Agent[]) => {
       const id = `TK-${Date.now().toString().slice(-6)}`
-      const task: Task = { id, title:draft.title, desiredOutcome:draft.desiredOutcome, type:draft.type, priority:draft.priority, budgetLimit:draft.budgetLimit, runtimeLimit:draft.runtimeLimit, outputFormat:draft.outputFormat, recurrence:draft.recurrence, status:'queued', progress:0, agents, estimatedCost: Number((agents.reduce((a,b)=>a+b.pricePerRun,0)*1.6).toFixed(2)), estimatedRuntime:`${Math.max(3,agents.length*2)}m`, startedAt:new Date().toISOString(), logs:['Task queued for orchestration.'] }
+      const task: Task = { id, title:draft.title, desiredOutcome:draft.desiredOutcome, type:draft.type, priority:draft.priority, budgetLimit:draft.budgetLimit, runtimeLimit:draft.runtimeLimit, outputFormat:draft.outputFormat, recurrence:draft.recurrence, status:'queued', progress:0, agents, estimatedCost: Number((agents.reduce((a,b)=>a+b.pricePerRun,0)*1.6).toFixed(2)), estimatedRuntime:`${Math.max(3,agents.length*2)}m`, startedAt:new Date().toISOString(), logs:['Task queued for orchestration.'], leadICP: draft.leadICP }
       setState((s:any)=>({ ...s, tasks:[task, ...s.tasks], activeTaskId:id, activityEvents:[{ id: crypto.randomUUID(), type:'TASK_POSTED', title:'Task posted', description:task.title, timestamp:new Date().toISOString(), status:'info', taskId:id, taskType:task.type }, ...s.activityEvents], toast:'Task started' }))
     },
     createContractFromTask: (taskId:string) => setState((s:any)=>({ ...s, contracts:[{ id:`C-${Date.now().toString().slice(-4)}`, client:'Internal Ops', agentName:'Task Swarm', taskTitle: s.tasks.find((t:Task)=>t.id===taskId)?.title ?? 'Task', recurrence:'weekly', monthlyValue:240, sla:97, nextRunDate:new Date(Date.now()+86400000).toISOString(), status:'active', createdFromTaskId:taskId }, ...s.contracts], activityEvents:[{ id: crypto.randomUUID(), type:'CONTRACT_CREATED', title:'Contract created', description:`Contract created from ${taskId}`, timestamp:new Date().toISOString(), status:'success', taskId }, ...s.activityEvents], toast:'Contract created' }))
+  ,
+    recordDataOperation: (datasetId:string, title:string, description:string, affectedRows=0) => setState((s:any)=> {
+      const ts = new Date().toISOString()
+      return {
+        ...s,
+        activityEvents:[{ id: crypto.randomUUID(), type:'DATA_LAB_OP', title, description, timestamp:ts, status:'info', taskType:'Data Lab' }, ...s.activityEvents],
+        proofRecords:[{ id:`POW-DATA-${Date.now().toString().slice(-6)}`, taskId:`DATA-${datasetId.slice(0,6)}`, agentName:'Data Lab Engine', type:'Data Lab', duration:'instant', cost:0, status:'verified', hash:`0x${Math.random().toString(16).slice(2,18)}`, logs:[description], artifact:[{ affectedRows, datasetId, title }] }, ...s.proofRecords]
+      }
+    })
   }), [state])
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>

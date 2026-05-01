@@ -7,6 +7,7 @@ import Sidebar from '@/components/Sidebar'
 import RightPanel from '@/components/RightPanel'
 import ActivityFeed from '@/components/ActivityFeed'
 import Marketplace from '@/components/Marketplace'
+import DataLab from '@/components/DataLab'
 import ProofOfWorkTable from '@/components/ProofOfWorkTable'
 import SwarmCommand from '@/components/SwarmCommand'
 import NetworkGraph from '@/components/NetworkGraph'
@@ -43,6 +44,7 @@ export default function DashboardPage() {
         <div className={`content${isWide ? ' wide' : ''}`}>
           {activePage === 'activity' && <ActivityFeed />}
           {activePage === 'marketplace' && <Marketplace />}
+          {activePage === 'data' && <DataLab />}
           {activePage === 'proof' && <ProofOfWorkTable />}
           {activePage === 'outreach' && <OutreachInbox />}
           {activePage === 'swarm' && <SwarmCommand onSpawnAgent={() => setSpawnOpen(true)} />}

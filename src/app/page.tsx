@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 export default function RootPage() {
   return (
     <main className="landing-shell">
@@ -19,8 +21,8 @@ export default function RootPage() {
             <span>PRODUCT</span><span>PROOF</span><span>MARKETPLACE</span><span>DOCS</span>
           </nav>
           <div className="landing-nav-actions">
-            <button className="landing-btn">SIGN IN</button>
-            <button className="landing-btn landing-btn-primary">SPAWN AGENT</button>
+            <Link href="/login" className="landing-btn">SIGN IN</Link>
+            <Link href="/dashboard" className="landing-btn landing-btn-primary">SPAWN AGENT</Link>
           </div>
         </div>
       </header>
@@ -38,8 +40,8 @@ export default function RootPage() {
             </h1>
             <p className="landing-copy">AGENTN.IO deploys, coordinates, and compounds autonomous workers across outreach, data extraction, and revenue loops. Launch swarms in minutes and monitor live proof-of-work in one terminal-native command layer.</p>
             <div className="landing-cta-row">
-              <button className="landing-btn landing-btn-primary">START BUILDING</button>
-              <button className="landing-btn">VIEW LIVE DEMO</button>
+              <Link href="/dashboard" className="landing-btn landing-btn-primary">START BUILDING</Link>
+              <Link href="/dashboard" className="landing-btn">VIEW LIVE DEMO</Link>
             </div>
           </div>
 

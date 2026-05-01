@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 
 const SOLO_STRIPE_URL = 'https://buy.stripe.com/14AcN6bli0WfayWgOy8g004'
 const SWARM_STRIPE_URL = 'https://buy.stripe.com/28E4gA89634n6iG2XI8g005'
+const ENTERPRISE_CONTACT_URL = 'mailto:sales@agentn.io?subject=Agentn%20Enterprise%20Inquiry'
 
 export default function RootPage() {
   const iframeRef = useRef<HTMLIFrameElement | null>(null)
@@ -12,7 +13,7 @@ export default function RootPage() {
     const iframe = iframeRef.current
     if (!iframe) return
 
-    const bindLandingLoginActions = () => {
+    const bindLandingActions = () => {
       const doc = iframe.contentDocument
       if (!doc) return
 
@@ -22,6 +23,28 @@ export default function RootPage() {
         if (!clickable) return
 
         const label = (clickable.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase()
+
+        if (label.includes('start solo') || label.includes('buy agentn solo')) {
+          event.preventDefault()
+          event.stopPropagation()
+          window.open(SOLO_STRIPE_URL, '_blank', 'noopener,noreferrer')
+          return
+        }
+
+        if (label.includes('deploy swarm') || label.includes('buy agentn swarm')) {
+          event.preventDefault()
+          event.stopPropagation()
+          window.open(SWARM_STRIPE_URL, '_blank', 'noopener,noreferrer')
+          return
+        }
+
+        if (label.includes('book call') || label.includes('enterprise')) {
+          event.preventDefault()
+          event.stopPropagation()
+          window.open(ENTERPRISE_CONTACT_URL, '_blank', 'noopener,noreferrer')
+          return
+        }
+
         if (label.includes('sign in') || label.includes('spawn')) {
           event.preventDefault()
           event.stopPropagation()
@@ -30,63 +53,22 @@ export default function RootPage() {
       }
 
       doc.addEventListener('click', handler, true)
-      iframe.dataset.loginBound = 'true'
+      iframe.dataset.actionsBound = 'true'
     }
 
-    iframe.addEventListener('load', bindLandingLoginActions)
+    iframe.addEventListener('load', bindLandingActions)
 
-    if (iframe.contentDocument?.readyState === 'complete' && iframe.dataset.loginBound !== 'true') {
-      bindLandingLoginActions()
+    if (iframe.contentDocument?.readyState === 'complete' && iframe.dataset.actionsBound !== 'true') {
+      bindLandingActions()
     }
 
     return () => {
-      iframe.removeEventListener('load', bindLandingLoginActions)
+      iframe.removeEventListener('load', bindLandingActions)
     }
   }, [])
 
   return (
     <main style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative' }}>
-      <div
-        style={{
-          position: 'fixed',
-          top: 16,
-          right: 16,
-          display: 'flex',
-          gap: 8,
-          zIndex: 20,
-        }}
-      >
-        <a
-          href={SOLO_STRIPE_URL}
-          target="_blank"
-          rel="noreferrer"
-          style={{
-            background: '#4ef08a',
-            color: '#0a0d0c',
-            fontWeight: 700,
-            padding: '8px 12px',
-            textDecoration: 'none',
-            borderRadius: 6,
-          }}
-        >
-          Buy Agentn Solo
-        </a>
-        <a
-          href={SWARM_STRIPE_URL}
-          target="_blank"
-          rel="noreferrer"
-          style={{
-            background: '#d8e6df',
-            color: '#0a0d0c',
-            fontWeight: 700,
-            padding: '8px 12px',
-            textDecoration: 'none',
-            borderRadius: 6,
-          }}
-        >
-          Buy Agentn Swarm
-        </a>
-      </div>
       <iframe
         ref={iframeRef}
         src="/landing.html"

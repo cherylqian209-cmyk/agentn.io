@@ -35,6 +35,12 @@ export type LeadArtifact = {
   type: 'lead_generation';
   icp: LeadGenICP;
   leads: LeadRecord[];
+  generated: {
+    items: Array<Record<string, unknown>>;
+    requestedCount: number;
+    generatedCount: number;
+    createdAt: string;
+  };
   summary: {
     requested: number;
     found: number;

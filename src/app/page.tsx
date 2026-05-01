@@ -24,14 +24,14 @@ export default function RootPage() {
 
         const label = (clickable.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase()
 
-        if (label.includes('start growth') || label.includes('buy agentn solo') || label.includes('growth')) {
+        if (label.includes('start solo') || label.includes('buy agentn solo')) {
           event.preventDefault()
           event.stopPropagation()
           window.open(SOLO_STRIPE_URL, '_blank', 'noopener,noreferrer')
           return
         }
 
-        if (label.includes('start operator') || label.includes('buy agentn swarm') || label.includes('operator')) {
+        if (label.includes('deploy swarm') || label.includes('buy agentn swarm')) {
           event.preventDefault()
           event.stopPropagation()
           window.open(SWARM_STRIPE_URL, '_blank', 'noopener,noreferrer')
@@ -45,7 +45,7 @@ export default function RootPage() {
           return
         }
 
-        if (label.includes('sign in') || label.includes('spawn') || label.includes('run free scan') || label.includes('run free revenue scan')) {
+        if (label.includes('sign in') || label.includes('spawn')) {
           event.preventDefault()
           event.stopPropagation()
           window.location.href = '/login'

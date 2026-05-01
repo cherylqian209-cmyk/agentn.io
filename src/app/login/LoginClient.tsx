@@ -1,11 +1,12 @@
 'use client'
 
-import { signIn, useSession } from 'next-auth/react'
+import { getProviders, signIn, useSession } from 'next-auth/react'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function LoginClient() {
   const [loading, setLoading] = useState(false)
+  const [googleEnabled, setGoogleEnabled] = useState(false)
   const { status } = useSession()
   const router = useRouter()
 
@@ -14,6 +15,22 @@ export default function LoginClient() {
       router.replace('/dashboard')
     }
   }, [router, status])
+
+  useEffect(() => {
+    let active = true
+
+    async function loadProviders() {
+      const providers = await getProviders()
+      if (!active) return
+      setGoogleEnabled(Boolean(providers?.google))
+    }
+
+    loadProviders()
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   async function handleGoogle() {
     setLoading(true)
@@ -34,7 +51,7 @@ export default function LoginClient() {
         </div>
         <div className="login-sub">Autonomous Growth Orchestration</div>
 
-        <button className="btn-google" onClick={handleGoogle} disabled={loading}>
+        <button className="btn-google" onClick={handleGoogle} disabled={loading || !googleEnabled}>
           {loading ? (
             <span className="spinner" />
           ) : (
@@ -45,8 +62,14 @@ export default function LoginClient() {
               <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335" />
             </svg>
           )}
-          {loading ? 'Redirecting...' : 'Sign in with Google'}
+          {loading ? 'Redirecting...' : googleEnabled ? 'Sign in with Google' : 'Google sign-in unavailable'}
         </button>
+
+        {!googleEnabled && (
+          <p style={{ fontFamily: 'var(--mono)', fontSize: '10px', color: '#ff9f9f', marginTop: '14px' }}>
+            Google OAuth is not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Vercel.
+          </p>
+        )}
 
         <p style={{ fontFamily: 'var(--mono)', fontSize: '9px', color: 'var(--text3)', marginTop: '20px', letterSpacing: '0.04em' }}>
           BY SIGNING IN YOU ACCEPT THE AGENTN.IO PROTOCOL TERMS

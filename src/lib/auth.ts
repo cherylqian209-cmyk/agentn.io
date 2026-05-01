@@ -1,15 +1,12 @@
 import { NextAuthOptions } from 'next-auth'
-import { PrismaAdapter } from '@next-auth/prisma-adapter'
 import GoogleProvider from 'next-auth/providers/google'
-import { prisma } from './prisma'
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET
-const hasDatabase = Boolean(process.env.DATABASE_URL)
 
 export const authOptions: NextAuthOptions = {
-  ...(hasDatabase ? { adapter: PrismaAdapter(prisma) } : {}),
-  session: hasDatabase ? undefined : { strategy: 'jwt' },
+  secret: process.env.NEXTAUTH_SECRET,
+  session: { strategy: 'jwt' },
   providers:
     googleClientId && googleClientSecret
       ? [
@@ -23,11 +20,16 @@ export const authOptions: NextAuthOptions = {
     signIn: '/login',
   },
   callbacks: {
-    session({ session, user, token }) {
+    async session({ session, token }) {
       if (session.user) {
-        session.user.id = hasDatabase ? user.id : (token.sub ?? '')
+        session.user.id = token.sub ?? ''
       }
       return session
+    },
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith('/')) return `${baseUrl}${url}`
+      if (new URL(url).origin === baseUrl) return url
+      return `${baseUrl}/dashboard`
     },
   },
 }

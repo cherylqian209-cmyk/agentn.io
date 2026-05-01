@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { MvpProvider } from '@/lib/mvpStore'
 import Topbar from '@/components/Topbar'
 import Sidebar from '@/components/Sidebar'
 import RightPanel from '@/components/RightPanel'
@@ -27,7 +28,7 @@ export default function DashboardPage() {
   const isWide = WIDE_PAGES.includes(activePage)
 
   return (
-    <div className="app-shell">
+    <MvpProvider><div className="app-shell">
       <Topbar />
 
       <div className="main">
@@ -73,6 +74,6 @@ export default function DashboardPage() {
           console.log('Task completed:', result)
         }}
       />
-    </div>
+    </div></MvpProvider>
   )
 }

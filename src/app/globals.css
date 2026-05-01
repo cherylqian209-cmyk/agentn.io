@@ -726,7 +726,7 @@ html, body {
 .landing-logo-mark { width: 26px; height: 26px; border: 2px solid #4ef08a; color: #4ef08a; display: grid; place-items: center; }
 .landing-nav-links { display: flex; gap: 28px; color: #8ea097; font-size: 12px; }
 .landing-nav-actions { display: flex; gap: 12px; align-items: center; }
-.landing-btn { border: 1px solid #23352d; background: transparent; color: #d8e6df; padding: 10px 16px; font: 500 12px 'JetBrains Mono', monospace; letter-spacing: .06em; }
+.landing-btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; border: 1px solid #23352d; background: transparent; color: #d8e6df; padding: 10px 16px; font: 500 12px 'JetBrains Mono', monospace; letter-spacing: .06em; }
 .landing-btn-primary { background: rgba(78, 240, 138, .12); border-color: #2ea862; color: #4ef08a; }
 .landing-hero { padding-top: clamp(4.5rem, 8vw, 6rem); padding-bottom: 3rem; }
 .landing-hero-grid { display: grid; gap: 64px; grid-template-columns: 1fr; align-items: start; }

@@ -15,12 +15,13 @@ import Contracts from '@/components/Contracts'
 import Insights from '@/components/Insights'
 import Compute from '@/components/Compute'
 import OutreachInbox from '@/components/OutreachInbox'
+import Forecast from '@/components/Forecast'
 import SpawnAgentModal from '@/components/SpawnAgentModal'
 import PostTaskModal from '@/components/PostTaskModal'
 
-type Page = 'activity' | 'marketplace' | 'data' | 'proof' | 'outreach' | 'swarm' | 'network' | 'contracts' | 'insights' | 'compute'
+type Page = 'activity' | 'marketplace' | 'data' | 'proof' | 'outreach' | 'swarm' | 'network' | 'contracts' | 'insights' | 'compute' | 'forecast'
 
-const WIDE_PAGES: Page[] = ['network', 'insights', 'compute']
+const WIDE_PAGES: Page[] = ['network', 'insights', 'compute', 'forecast']
 
 export default function DashboardPage() {
   const [activePage, setActivePage] = useState<Page>('activity')
@@ -52,6 +53,7 @@ export default function DashboardPage() {
           {activePage === 'contracts' && <Contracts />}
           {activePage === 'insights' && <Insights />}
           {activePage === 'compute' && <Compute />}
+          {activePage === 'forecast' && <Forecast />}
 
           {!isWide && <RightPanel />}
         </div>
